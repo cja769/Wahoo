@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# IntelliJ
+.idea/
+*.iml
+src/out/**
+
+# Visual Studio Code
+.vscode/
+.vsls.json
+
+build
+
+# Gradle
+.gradle
+
+# Miscellaneous
+.java-version
