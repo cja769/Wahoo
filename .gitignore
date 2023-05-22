@@ -1,19 +1,5 @@
-# macOS
+node_modules
 .DS_Store
-
-# IntelliJ
-.idea/
-*.iml
-src/out/**
-
-# Visual Studio Code
-.vscode/
-.vsls.json
-
-build
-
-# Gradle
+.idea
 .gradle
-
-# Miscellaneous
-.java-version
+build

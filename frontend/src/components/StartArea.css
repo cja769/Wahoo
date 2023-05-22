@@ -1,0 +1,23 @@
+.start-area-left {
+    margin-right: 35px;
+}
+
+.start-area-right {
+    margin-left: 35px;
+}
+
+.start-area-top-left {
+    rotate: 45deg;
+}
+
+.start-area-top-right {
+    rotate : -45deg;
+}
+
+.start-area-bottom-left {
+    rotate: -45deg;
+}
+
+.start-area-bottom-right {
+    rotate: 45deg;
+}

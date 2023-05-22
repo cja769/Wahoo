@@ -1,0 +1,131 @@
+package com.jay.wahoo;
+
+import com.jay.wahoo.neat.Genome;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Player {
+
+    private final List<Marble> marbles;
+    private final SafeBoard safeBoard;
+    private final StartBoard startBoard;
+    private final PlayerBoard playerBoard;
+    private final String identifier;
+    private String name;
+    private Player partner;
+    private Genome genome;
+    private Genome originalGenome;
+    private String originalName;
+
+    public Player(Genome genome, Integer identifier, String name) {
+        this.genome = genome;
+        this.name = name;
+        this.originalGenome = genome;
+        this.originalName = name;
+        this.identifier = "p" + identifier;
+        this.marbles = new ArrayList<>();
+        this.safeBoard = new SafeBoard(this);
+        this.startBoard = new StartBoard();
+        this.playerBoard = new PlayerBoard();
+        for (int i = 0; i < 4; i++) {
+            Marble marble = new Marble(this, i);
+            marbles.add(marble);
+            startBoard.addToBoard(marble);
+        }
+    }
+
+    public void makeHuman(String name) {
+        this.name = name;
+        this.genome = null;
+    }
+
+    public void makeBot() {
+        this.name = this.originalName;
+        this.genome = this.originalGenome;
+    }
+
+    public String getName() {
+        return  name;
+    }
+
+    public Genome genome() {
+        return genome;
+    }
+
+    public boolean isHuman() {
+        return genome == null;
+    }
+
+    public void setPartner(Player partner) {
+        this.partner = partner;
+    }
+
+    public Player partner() {
+        return partner;
+    }
+
+    public String identifier() {
+        return identifier;
+    }
+
+    public List<Marble> marbles() {
+        return marbles;
+    }
+
+    public SafeBoard safeBoard() {
+        return safeBoard;
+    }
+
+    public StartBoard startBoard() {
+        return startBoard;
+    }
+
+    public PlayerBoard playerBoard() {
+        return playerBoard;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Player) {
+            Player other = (Player) obj;
+            return identifier().equals(other.identifier());
+        }
+        return false;
+    }
+
+    public static class PlayerState {
+        public String playerId;
+        public String playerName;
+        public List<MarblePosition> safePositions = new ArrayList<>();
+        public List<MarblePosition> homePositions = new ArrayList<>();
+        public List<MarblePosition> playerAreaPositions = new ArrayList<>();
+
+        public static PlayerState from(Player player, List<Marble> validMarblesToMove) {
+            PlayerState playerState = new PlayerState();
+            playerState.playerId = player.identifier();
+            playerState.playerName = player.getName();
+            playerState.safePositions = player.safeBoard.getState(validMarblesToMove);
+            playerState.homePositions = player.startBoard.getState(validMarblesToMove);
+            playerState.playerAreaPositions = player.playerBoard().getState(validMarblesToMove);
+            return playerState;
+        }
+
+        public static class MarblePosition {
+            public int position;
+            public String playerId;
+            public int marbleIdentifier;
+            public boolean isMovable;
+
+            public static MarblePosition from(Marble m, boolean isMovable, int position) {
+                MarblePosition pos = new MarblePosition();
+                pos.position = position;
+                pos.playerId = m.player().identifier();
+                pos.marbleIdentifier = m.identifier();
+                pos.isMovable = isMovable;
+                return pos;
+            }
+        }
+    }
+
+}

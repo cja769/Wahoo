@@ -1,0 +1,32 @@
+.board-top {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.board-middle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: -10px;
+    margin-bottom: -10px;
+}
+
+.board-bottom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.leave-area {
+    position: absolute;
+}
+
+.player-name {
+    width : 180px;
+}
+
+.player-name-spacer {
+    width : 175px;
+}

@@ -1,0 +1,28 @@
+.player-area {
+    text-align: center;
+    display: inline-block;
+}
+
+.player-area-right {
+    rotate: 90deg;
+    margin-left: 8px;
+}
+
+.player-area-left {
+    rotate: -90deg;
+    margin-right: 8px;
+}
+
+.player-area-bottom {
+    rotate: 180deg;
+}
+
+.safe-area {
+    border: solid black 1px;
+    margin-bottom: 10px;
+    padding-top: 5px;
+}
+
+.safe-area.current {
+    background-color: black;
+}

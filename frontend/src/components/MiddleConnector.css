@@ -1,0 +1,18 @@
+.middle-area {
+    text-align: center;
+    display: inline-block;
+    rotate: 90deg;
+}
+
+.middle-area-row {
+    height: 35px;
+}
+
+.die {
+    position: absolute;
+    top: 60px;
+    left: 60px;
+    width: 50px;
+    height: 50px;
+    display: inline-block;
+}
