@@ -5,6 +5,7 @@ import MiddleConnector from "./MiddleConnector";
 import StartArea from "./StartArea";
 import {getPlayerState} from "../utility/marblePositionHelper";
 import {initSocket} from "../utility/webSocket";
+import getBackendUrl from "../utility/constants";
 
 const Board = (props) => {
     const originalPlayerOrder = ['p0', 'p1', 'p2', 'p3']
@@ -33,7 +34,7 @@ const Board = (props) => {
 
     useEffect(() => {
         if (props.gameId) {
-            fetch("/api/game/" + props.gameId)
+            fetch(getBackendUrl() + "/api/game/" + props.gameId)
                 .then(r => r.json())
                 .then(body => {
                     setBoardState(body);
@@ -51,7 +52,7 @@ const Board = (props) => {
 
     const start = () => {
         setDisableNextButton(true);
-        fetch("/api/start/" + boardState.gameId)
+        fetch(getBackendUrl() + "/api/start/" + boardState.gameId)
             .then(r => {
                 if (r.status !== 200) {
                     throw new Error("Error getting next move");
@@ -67,7 +68,7 @@ const Board = (props) => {
     }
 
     const forfeitGame = () => {
-        fetch("/api/forfeit", {
+        fetch(getBackendUrl() + "/api/forfeit", {
             method: "POST",
             headers: {
                 'Accept' : 'application/json',
@@ -86,7 +87,7 @@ const Board = (props) => {
     }
 
     const leaveUnstartedGame = () => {
-        fetch("/api/leave", {
+        fetch(getBackendUrl() + "/api/leave", {
             method: "POST",
             headers: {
                 'Accept' : 'application/json',
@@ -103,7 +104,7 @@ const Board = (props) => {
     const selectMarble = (playerId, marbleId) => {
         if (boardState.awaitingHumanMove === true) {
             setDisableNextButton(true);
-            fetch("/api/play", {
+            fetch(getBackendUrl() + "/api/play", {
                 method: "POST",
                 headers: {
                     'Accept' : 'application/json',

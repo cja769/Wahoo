@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import './Home.css';
 import JoinGame from "./JoinGame";
 import {initSocket} from "../utility/webSocket";
+import getBackendUrl from "../utility/constants";
 
 const Home = (props) => {
     const [games, setGames] = useState({
@@ -10,14 +11,14 @@ const Home = (props) => {
     const [selectedGame, setSelectedGame] = useState();
     const [disableCreate, setDisableCreate] = useState(false);
     useEffect(() => {
-        fetch("/api/games")
+        fetch(getBackendUrl() + "/api/games")
             .then(r => r.json())
             .then(j => setGames(j));
         initSocket('/topic/joinable', message => setGames(JSON.parse(message.body)));
     }, []);
 
     useEffect(() => {
-        const found = games.games.find(g => g.gameId === selectedGame?.gameId);
+        const found = games?.games?.find(g => g.gameId === selectedGame?.gameId);
         if (found) {
             setSelectedGame(found);
         }
@@ -25,14 +26,14 @@ const Home = (props) => {
 
     const createGame = () => {
         setDisableCreate(true);
-        fetch("/api/create")
+        fetch(getBackendUrl() + "/api/create")
             .then(() => {
                 setDisableCreate(false);
             });
     }
 
     const joinGame = (gameId, playerId, playerName) => {
-        fetch("/api/join", {
+        fetch(getBackendUrl() + "/api/join", {
             method: "POST",
             headers: {
                 'Accept' : 'application/json',
