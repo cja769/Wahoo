@@ -31,6 +31,10 @@ public class Pool {
 
     }
 
+    public int getGenerations() {
+        return generations; // Add for serialization
+    }
+
     public void addToSpecies(Genome g) {
         for (Species s : species) {
             if (s.getGenomes().size() == 0)
