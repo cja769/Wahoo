@@ -9,6 +9,7 @@ import com.jay.wahoo.neat.config.NEAT_Config;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class Pool {
 
@@ -17,6 +18,7 @@ public class Pool {
     private int generations = 0;
     private float topFitness ;
     private int poolStaleness = 0;
+    private boolean freshPool = true;
 
 
     public ArrayList<Species> getSpecies() {
@@ -24,55 +26,34 @@ public class Pool {
     }
 
     public void initializePool() {
-
-        for (int i = 0; i < NEAT_Config.POPULATION; i++) {
-            addToSpecies(new Genome());
+        Species specie = new Species();
+        for (int i = 1; i <= NEAT_Config.POPULATION; i++) {
+            specie.getGenomes().add(new Genome());
+            if (i % getSizeOfSpecies() == 0) {
+                species.add(specie);
+                specie = new Species();
+            }
         }
+    }
 
+    public boolean isFreshPool() {
+        return freshPool;
+    }
+
+    public void setFreshPool(boolean isFreshPool) {
+        this.freshPool = isFreshPool;
+    }
+
+    private int getSizeOfSpecies() {
+        return NEAT_Config.POPULATION / getNumberOfSpecies();
+    }
+
+    private int getNumberOfSpecies() {
+        return 10;
     }
 
     public int getGenerations() {
         return generations; // Add for serialization
-    }
-
-    public void addToSpecies(Genome g) {
-        for (Species s : species) {
-            if (s.getGenomes().size() == 0)
-                continue;
-            Genome g0 = s.getGenomes().get(0);
-//		System.out.println(s.genomes.size());
-            if (Genome.isSameSpecies(g, g0)) {
-                s.getGenomes().add(g);
-                return;
-            }
-        }
-        Species childSpecies = new Species();
-        childSpecies.getGenomes().add(g);
-        species.add(childSpecies);
-    }
-
-    public void evaluateFitness() {         //For Testing
-        for (Species s : species)
-            for (Genome g : s.getGenomes()) {
-                float fitness = 0;
-                g.setFitness(0);
-                for (int i = 0; i < 2; i++)
-                    for (int j = 0; j < 2; j++) {
-                        float inputs[] = {i, j};
-                        float output[] = g.evaluateNetwork(inputs);
-                        int expected = i^j;
-      //                  System.out.println("Inputs are " + inputs[0] +" " + inputs[1] + " output " + output[0] + " Answer : " + (i ^ j));
-                        //if (output[0] == (i ^ j))
-                            fitness +=  (1 - Math.abs(expected - output[0]));
-                    }
-                    fitness = fitness * fitness;// * fitness * fitness;
-
-                if(fitness>15)
-                    System.out.println("Fitness : " + fitness);
-                g.setFitness(fitness);
-                //System.out.println("Fitness : "+fitness);
-            }
-            rankGlobally();
     }
 
     public void evaluateFitness(Environment environment){
@@ -84,16 +65,6 @@ public class Pool {
                 allGenome.add(g);
             }
         }
-
- /*       for(int i =0; i<allGenome.size(); i++){
-            for(int j = 0; j<allGenome.size(); j++){
-                if(i!=j){
-                    Genome player1 = allGenome.get(i);
-                    Genome player2 = allGenome.get(j);
-                    environment.match(player1,player2);
-                }
-            }
-        }*/
 
         environment.evaluateFitness(allGenome);
         rankGlobally();
@@ -139,12 +110,6 @@ public class Pool {
         return total;
     }
 
-    public void removeWeakGenomesFromSpecies(boolean allButOne){
-        for(Species s: species){
-            s.removeWeakGenomes(allButOne);
-        }
-    }
-
     public void removeStaleSpecies(){
         ArrayList<Species> survived = new ArrayList<>();
 
@@ -185,46 +150,34 @@ public class Pool {
     }
 
     @JsonIgnore
-    public ArrayList<Genome> breedNewGeneration() {
-
-
+    public void breedNewGeneration() {
         calculateGenomeAdjustedFitness();
         ArrayList<Species> survived = new ArrayList<>();
-
-        removeWeakGenomesFromSpecies(false);
         removeStaleSpecies();
-        float globalAdjustedFitness = calculateGlobalAdjustedFitness();
-        ArrayList<Genome> children = new ArrayList<>();
-        float carryOver = 0;
         for (Species s : species) {
-            float fchild = NEAT_Config.POPULATION * (s.getTotalAdjustedFitness() / globalAdjustedFitness) ;//- 1;       // reconsider
-            int nchild = (int) fchild;
-            carryOver += fchild - nchild;
-            if (carryOver > 1) {
-                nchild++;
-                carryOver -= 1;
+            s.removeWeakGenomes(false);
+            Species newSpecies = new Species(s.getTopGenome());
+            survived.add(newSpecies);
+            for (int i = 1; i < getSizeOfSpecies(); i++) {
+                newSpecies.getGenomes().add(s.breedChild());
             }
-
-            if(nchild < 1)
-                continue;
-
-            survived.add(new Species(s.getTopGenome()));
-            //s.removeWeakGenome(nchild);
-
-            //children.add(s.getTopGenome());
-            for (int i = 1; i < nchild; i++) {
-                Genome child = s.breedChild();
-                children.add(child);
-            }
-
-
         }
+        List<Species> newSpecies = new ArrayList<>();
+        for (int i = 0; i < (getNumberOfSpecies() - survived.size()); i++) {
+            Species s = new Species();
+            int k = 0;
+            for (int j = 0; j < getSizeOfSpecies(); j++) {
+                if (k == survived.size()) {
+                    k = 0;
+                }
+                s.getGenomes().add(survived.get(k).breedChild());
+                k++;
+            }
+            newSpecies.add(s);
+        }
+        survived.addAll(newSpecies);
         species = survived;
-        for (Genome child: children)
-            addToSpecies(child);
-        //clearInnovations();
         generations++;
-        return children;
     }
 
     @JsonIgnore
@@ -238,14 +191,6 @@ public class Pool {
             }
         }
         return topFitness;
-    }
-
-    @JsonIgnore
-    public int getCurrentPopulation() {
-        int p = 0;
-        for (Species s : species)
-            p += s.getGenomes().size();
-        return p;
     }
 
 

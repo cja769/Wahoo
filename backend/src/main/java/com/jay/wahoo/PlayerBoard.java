@@ -79,7 +79,7 @@ public class PlayerBoard implements ContainingBoard {
         return findMarblePosition(marble)
             .orElseGet(() -> {
                 if (nextSafeBoard.getPlayer().equals(marble.player())) {
-                    return nextSafeBoard.getMarblePositionOnTable(marble) + (area.length - 1);
+                    return nextSafeBoard.getMarblePositionOnTable(marble) + (NUM_SPOTS_BEFORE_SAFE - 1);
                 }
                 return nextPlayerBoard.getMarblePositionOnTable(marble) + (area.length - 1);
             });

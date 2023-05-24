@@ -12,6 +12,10 @@ public class NodeGene {
 
     private ArrayList<ConnectionGene> incomingCon = new ArrayList<>();
 
+    public NodeGene() {
+
+    }
+
     public NodeGene(float value) {
         super();
         this.value = value;

@@ -5,7 +5,12 @@ import com.jay.wahoo.Game.GameState;
 import com.jay.wahoo.controller.dto.*;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.dto.GameSummary.GameEndReason;
+import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.service.GameService;
+import com.jay.wahoo.service.GenomeService;
+import com.jay.wahoo.service.GenomeService.Network;
+import com.jay.wahoo.service.PoolService;
+import com.jay.wahoo.service.TrainingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -24,6 +28,9 @@ import java.util.List;
 public class MainController {
 
     private final GameService gameService;
+    private final GenomeService genomeService;
+    private final PoolService poolService;
+    private final TrainingService trainingService;
 
     @GetMapping("/games")
     public JoinableGameList getJoinableGames() {
@@ -96,6 +103,18 @@ public class MainController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         gameService.moveHuman(game, play.playerId, play.marbleId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/network")
+    public Network getNetwork() throws IOException {
+        Genome genome = poolService.getPlayersFromPool(poolService.getPool(), 1).get(0);
+        return genomeService.getNetwork(genome);
+    }
+
+    @GetMapping("/train/{times}")
+    public ResponseEntity<Void> trainAi(@PathVariable int times) throws IOException {
+        trainingService.train(times);
         return ResponseEntity.ok().build();
     }
 

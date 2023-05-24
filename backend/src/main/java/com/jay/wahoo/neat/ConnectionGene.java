@@ -10,14 +10,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ConnectionGene {
 
-    private int into,out, innovation;
+    private int into,out;
     private float weight;
     private boolean enabled;
 
-    public ConnectionGene(int into, int out, int innovation, float weight, boolean enabled) {
+    public ConnectionGene(int into, int out, float weight, boolean enabled) {
         this.into = into;
         this.out = out;
-        this.innovation = innovation;
         this.weight = weight;
         this.enabled = enabled;
     }
@@ -27,7 +26,6 @@ public class ConnectionGene {
         if(connectionGene!=null) {
             this.into = connectionGene.getInto();
             this.out = connectionGene.getOut();
-            this.innovation = connectionGene.getInnovation();
             this.weight = connectionGene.getWeight();
             this.enabled = connectionGene.isEnabled();
         }
@@ -39,10 +37,6 @@ public class ConnectionGene {
 
     public int getOut() {
         return out;
-    }
-
-    public int getInnovation() {
-        return innovation;
     }
 
     public float getWeight() {

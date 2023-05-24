@@ -14,16 +14,14 @@ import java.util.Random;
 public class Species implements Comparable{
     private ArrayList<Genome> genomes = new ArrayList<>();
     private float topFitness = 0;
-    private int staleness =0 ;
+    private int staleness =0;
     Random rand = new Random();
 
-
-    public Species(){
+    public Species() {
         super();
     }
 
     public Species(Genome top){
-        super();
         this.genomes.add(top);
     }
 
@@ -42,7 +40,6 @@ public class Species implements Comparable{
 
          return totalAdjustedFitness;
     }
-
 
     private void  sortGenomes(){
         //sort internally genomes
@@ -81,19 +78,9 @@ public class Species implements Comparable{
 
     @JsonIgnore
     public Genome breedChild(){
-        Genome child ;
-        if (rand.nextFloat() < NEAT_Config.CROSSOVER_CHANCE ){
-            Genome g1 = genomes.get(rand.nextInt(genomes.size()));
-            Genome g2 = genomes.get(rand.nextInt(genomes.size()));
-            child = Genome.crossOver(g1,g2);
-        }
-        else{
-            Genome g1 = genomes.get(rand.nextInt(genomes.size()));
-            child = g1;
-        }
+        Genome child = genomes.get(rand.nextInt(genomes.size()));
         child = new Genome(child);
-        child.Mutate();
-
+        child.mutate();
         return child;
     }
 
