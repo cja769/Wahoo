@@ -10,12 +10,15 @@ const Home = (props) => {
     })
     const [selectedGame, setSelectedGame] = useState();
     const [disableCreate, setDisableCreate] = useState(false);
+    const [socketClient, setSocketClient] = useState();
     useEffect(() => {
         fetch(getBackendUrl() + "/api/games")
             .then(r => r.json())
             .then(j => setGames(j));
-        initSocket('/topic/joinable', message => setGames(JSON.parse(message.body)));
-    }, []);
+        if (!socketClient) {
+            setSocketClient(initSocket('/topic/joinable', message => setGames(JSON.parse(message.body))));
+        }
+    }, [socketClient, setSocketClient]);
 
     useEffect(() => {
         const found = games?.games?.find(g => g.gameId === selectedGame?.gameId);
