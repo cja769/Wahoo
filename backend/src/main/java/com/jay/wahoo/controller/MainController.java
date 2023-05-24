@@ -71,7 +71,7 @@ public class MainController {
     @GetMapping("/game/{gameId}")
     public GameSummary getGame(@PathVariable String gameId) {
         return gameService.getGameById(gameId)
-            .map(game -> (GameSummary) new GameState(game, List.of()))
+            .map(game -> (GameSummary) new GameState(game))
             .or(() -> gameService.getFinishedGame(gameId))
             .orElseThrow(() -> new IllegalArgumentException("No game with id " + gameId + " exists"));
     }

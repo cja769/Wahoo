@@ -1,12 +1,10 @@
 package com.jay.wahoo;
 
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.jay.wahoo.Player.PlayerState;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.neat.config.NEAT_Config;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Map.Entry;
@@ -26,6 +24,8 @@ public class Game {
     public int diceRoll;
     private boolean gameStarted = false;
     public LocalDateTime lastUpdated;
+    public List<Marble> movableMarbles = new ArrayList<>();
+    public boolean rolledThreeSixes;
 
     public Game(List<Genome> genomes, boolean verbose) {
         assert genomes.size() == 4;
@@ -95,7 +95,7 @@ public class Game {
 
     public GameState next() {
         gameStarted = true;
-        List<Marble> canMove = new ArrayList<>();
+        rolledThreeSixes = false;
         if (!awaitingHumanMove && !isGameComplete()) {
             playerPos = playerPos % 4;
             currentPlayer = players[playerPos];
@@ -106,13 +106,14 @@ public class Game {
                 }
                 gameBoard.resetFurthestMarble(currentPlayer);
                 sixCount = 0;
+                rolledThreeSixes = true;
             } else {
-                canMove = getMovableMarbles(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
-                if (!canMove.isEmpty() && currentPlayer.isHuman()) {
+                movableMarbles = getMovableMarbles(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
+                if (!movableMarbles.isEmpty() && currentPlayer.isHuman()) {
                     awaitingHumanMove = true;
                 } else {
-                    if (!canMove.isEmpty()) {
-                        Marble marbleToMove = chooseMarbleToMove(currentPlayer, canMove, diceRoll, sixCount);
+                    if (!movableMarbles.isEmpty()) {
+                        Marble marbleToMove = chooseMarbleToMove(currentPlayer, movableMarbles, diceRoll, sixCount);
                         gameBoard.move(marbleToMove, diceRoll);
                     }
                     incrementTurn();
@@ -120,7 +121,7 @@ public class Game {
             }
         }
         lastUpdated = LocalDateTime.now();
-        return new GameState(this, canMove);
+        return new GameState(this);
     }
 
     private List<Marble> getMovableMarbles(Player player) {
@@ -157,7 +158,7 @@ public class Game {
         awaitingHumanMove = false;
         incrementTurn();
         lastUpdated = LocalDateTime.now();
-        return new GameState(this, List.of());
+        return new GameState(this);
     }
 
     public boolean isGameComplete() {
@@ -226,27 +227,30 @@ public class Game {
         public int currentRoll;
         public boolean gameComplete;
         public String currentPlayerId;
+        public String currentPlayerName;
         public boolean awaitingHumanMove;
         public boolean hasStarted;
         public LocalDateTime lastUpdated;
+        public boolean rolledThreeSixes;
 
-        public GameState(Game game, List<Marble> validMarblesToMove) {
+        public GameState(Game game) {
             this.hasStarted = !game.isJoinable();
             this.awaitingHumanMove = game.awaitingHumanMove;
             this.currentPlayerId = game.currentPlayer != null ? game.currentPlayer.identifier() : null;
+            this.currentPlayerName = game.currentPlayer != null ? game.currentPlayer.getName() : null;
             this.gameComplete = game.isGameComplete();
             this.gameId = game.identifier;
             this.currentRoll = game.diceRoll;
             this.states = Arrays.stream(game.players)
-                .map(p -> PlayerState.from(p, game.awaitingHumanMove ? validMarblesToMove : List.of()))
+                .map(p -> PlayerState.from(p, game.awaitingHumanMove ? game.movableMarbles : List.of()))
                 .toList();
             this.lastUpdated = game.lastUpdated;
+            this.rolledThreeSixes = game.rolledThreeSixes;
         }
 
         public GameState (Game game, String winningPlayerId, GameEndReason reason) {
-            this(game, List.of());
+            this(game);
             this.endReason = reason;
-            this.gameId = game.identifier;
             Player player = Arrays.stream(game.players)
                 .filter(p -> p.identifier().equals(winningPlayerId))
                 .findFirst()
@@ -257,7 +261,6 @@ public class Game {
                 .filter(p -> !p.equals(player) && !p.equals(player.partner()))
                 .map(GameSummaryPlayer::from)
                 .toList();
-            this.lastUpdated = game.lastUpdated;
         }
 
     }

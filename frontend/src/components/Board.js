@@ -12,16 +12,18 @@ const Board = (props) => {
     const index = originalPlayerOrder.indexOf(props.playerId);
     const playerOrder = originalPlayerOrder.slice(index);
     playerOrder.push(...originalPlayerOrder.slice(0, index));
-    const [disableNextButton, setDisableNextButton] = useState(false);
+    const [disableStartButton, setDisableStartButton] = useState(false);
     const [errorMessage, setErrorMessage] = useState();
     const defaultBoardState = {
         currentRoll: 0,
         states: [],
         gameComplete: false,
-        currentPlayer: "",
+        currentPlayerId: "",
+        currentPlayerName: "",
         awaitingHumanMove: false,
         gameId: "",
-        hasStarted : false
+        hasStarted : false,
+        rolledThreeSixes : false
     };
     const [boardState, setBoardStateInternal] = useState(defaultBoardState)
     const [diceRoll, setDiceRoll] = useState(0);
@@ -30,6 +32,13 @@ const Board = (props) => {
     const setBoardState = val => {
         setBoardStateInternal(val);
         setDiceRoll(val.currentRoll);
+        if (val.rolledThreeSixes === true) {
+            setErrorMessage("Player " + val.currentPlayerName + " rolled three sixes!");
+            setTimeout(() => {
+                setErrorMessage(null);
+            }, 3000)
+        }
+
     }
 
     useEffect(() => {
@@ -38,9 +47,6 @@ const Board = (props) => {
                 .then(r => r.json())
                 .then(body => {
                     setBoardState(body);
-                    if (body.awaitingHumanMove === true) {
-                        setDisableNextButton(true);
-                    }
                 });
             if (!socketClient) {
                 setSocketClient(initSocket('/topic/game/' + props.gameId, message => {
@@ -51,7 +57,7 @@ const Board = (props) => {
     }, [props.gameId, socketClient]);
 
     const start = () => {
-        setDisableNextButton(true);
+        setDisableStartButton(true);
         fetch(getBackendUrl() + "/api/start/" + boardState.gameId)
             .then(r => {
                 if (r.status !== 200) {
@@ -63,7 +69,7 @@ const Board = (props) => {
                 setTimeout(() => {
                     setErrorMessage(null);
                 }, 2000)
-                setDisableNextButton(false)
+                setDisableStartButton(false)
             });
     }
 
@@ -103,7 +109,6 @@ const Board = (props) => {
 
     const selectMarble = (playerId, marbleId) => {
         if (boardState.awaitingHumanMove === true) {
-            setDisableNextButton(true);
             fetch(getBackendUrl() + "/api/play", {
                 method: "POST",
                 headers: {
@@ -127,7 +132,6 @@ const Board = (props) => {
                 setTimeout(() => {
                     setErrorMessage(null);
                 }, 2000)
-                setDisableNextButton(false)
             });
         }
     }
@@ -147,14 +151,14 @@ const Board = (props) => {
                     }
                     {!boardState.hasStarted &&
                         <>
-                            <button className={'button'} disabled={disableNextButton} onClick={start}>Start</button>
+                            <button className={'button'} disabled={disableStartButton} onClick={start}>Start</button>
                             <button className={'button'} onClick={leaveUnstartedGame}>Leave</button>
                         </>
                     }
                 </div>
             </div>
             <div className={'center'}>
-                <span className={"error-text" + (!errorMessage ? ' hidden' : '')}>{errorMessage}</span>
+                <h3 className={"error-text" + (!errorMessage ? ' hidden' : '')}>{errorMessage || "This is a spacing placeholder"}</h3>
             </div>
             <div className={'center'}>
                 <div className={'center player-name'}>

@@ -116,7 +116,7 @@ public class GameService {
     }
 
     private void sendGameStateUpdate(Game game) {
-        sendGameStateUpdate(new GameState(game, List.of()));
+        sendGameStateUpdate(new GameState(game));
     }
 
     private void sendGameStateUpdate(GameSummary gameState) {
