@@ -1,11 +1,13 @@
 package com.jay.wahoo;
 
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.jay.wahoo.Player.PlayerState;
-import com.jay.wahoo.controller.MainController.GameEndReason;
-import com.jay.wahoo.controller.MainController.GameSummary;
+import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.neat.config.NEAT_Config;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -23,6 +25,7 @@ public class Game {
     public boolean awaitingHumanMove = false;
     public int diceRoll;
     private boolean gameStarted = false;
+    public LocalDateTime lastUpdated;
 
     public Game(List<Genome> genomes, boolean verbose) {
         assert genomes.size() == 4;
@@ -49,6 +52,7 @@ public class Game {
             players[i].setPartner(players[(i + 2) % 4]);
         }
         this.gameBoard = new GameBoard(Arrays.stream(players).toList());
+        this.lastUpdated = LocalDateTime.now();
     }
 
     public boolean isJoinable() {
@@ -64,6 +68,7 @@ public class Game {
             throw new IllegalArgumentException("Can't join as player " + playerIdentifier + " because that's already a human");
         }
         matched.makeHuman(name);
+        lastUpdated = LocalDateTime.now();
     }
 
     public void leaveGame(String playerId) {
@@ -75,6 +80,7 @@ public class Game {
             throw new IllegalArgumentException("Can't join as player " + playerId + " because that's already a human");
         }
         matched.makeBot();
+        lastUpdated = LocalDateTime.now();
     }
 
     private Player findPlayer(String playerId) {
@@ -113,6 +119,7 @@ public class Game {
                 }
             }
         }
+        lastUpdated = LocalDateTime.now();
         return new GameState(this, canMove);
     }
 
@@ -149,6 +156,7 @@ public class Game {
         gameBoard.move(selectedMarbles.get(0), diceRoll);
         awaitingHumanMove = false;
         incrementTurn();
+        lastUpdated = LocalDateTime.now();
         return new GameState(this, List.of());
     }
 
@@ -220,6 +228,7 @@ public class Game {
         public String currentPlayerId;
         public boolean awaitingHumanMove;
         public boolean hasStarted;
+        public LocalDateTime lastUpdated;
 
         public GameState(Game game, List<Marble> validMarblesToMove) {
             this.hasStarted = !game.isJoinable();
@@ -231,6 +240,7 @@ public class Game {
             this.states = Arrays.stream(game.players)
                 .map(p -> PlayerState.from(p, game.awaitingHumanMove ? validMarblesToMove : List.of()))
                 .toList();
+            this.lastUpdated = game.lastUpdated;
         }
 
         public GameState (Game game, String winningPlayerId, GameEndReason reason) {
@@ -247,6 +257,7 @@ public class Game {
                 .filter(p -> !p.equals(player) && !p.equals(player.partner()))
                 .map(GameSummaryPlayer::from)
                 .toList();
+            this.lastUpdated = game.lastUpdated;
         }
 
     }

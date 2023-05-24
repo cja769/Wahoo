@@ -23,7 +23,7 @@ public class WahooEnvironment implements Environment {
         List<Genome> players = new ArrayList<>();
         List<Future<List<Genome>>> inProgress = new ArrayList<>();
         population.forEach(g -> g.setFitness(0));
-        final ExecutorService threads = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+        final ExecutorService threads = Executors.newFixedThreadPool(2);
         for (int i = 0; i < population.size(); i++) {
             if (players.size() == 4) {
                 inProgress.add(playMatch(players, threads));
