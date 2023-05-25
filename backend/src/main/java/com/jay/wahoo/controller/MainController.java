@@ -2,6 +2,7 @@ package com.jay.wahoo.controller;
 
 import com.jay.wahoo.Game;
 import com.jay.wahoo.Game.GameState;
+import com.jay.wahoo.Player;
 import com.jay.wahoo.controller.dto.*;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.dto.GameSummary.GameEndReason;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
 
 @RestController
@@ -29,7 +31,6 @@ public class MainController {
 
     private final GameService gameService;
     private final GenomeService genomeService;
-    private final PoolService poolService;
     private final TrainingService trainingService;
 
     @GetMapping("/games")
@@ -106,10 +107,19 @@ public class MainController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/network")
-    public Network getNetwork() throws IOException {
-        Genome genome = poolService.getPlayersFromPool(poolService.getPool(), 1).get(0);
-        return genomeService.getNetwork(genome);
+    @GetMapping("/network/{gameId}/{playerId}")
+    public Network getNetwork(@PathVariable String gameId,
+                              @PathVariable String playerId) throws IOException {
+        Game game = gameService.getGameById(gameId)
+            .orElseThrow(() -> new IllegalArgumentException("No game with gameId " + gameId + " exists"));
+        Player player = Arrays.asList(game.players).stream()
+            .filter(p -> p.identifier().equals(playerId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No player id with playerId " + playerId + " exists for game " + gameId));
+        if (player.isHuman()) {
+            throw new IllegalArgumentException("Player with playerId " + playerId + " in game " + gameId + " is a human");
+        }
+        return genomeService.getNetwork(player.genome());
     }
 
     @GetMapping("/train/{times}")

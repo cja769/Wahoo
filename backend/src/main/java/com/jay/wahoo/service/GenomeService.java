@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 @Service
 public class GenomeService {
 
+    private static final Integer FIRST_OUTPUT_NODE = NEAT_Config.INPUTS + NEAT_Config.HIDDEN_NODES;
+    private static final Integer LAST_INPUT_NODE = NEAT_Config.INPUTS; // include bias
+
     public Network getNetwork(Genome genome) {
         Map<Integer, List<ConnectionGene>> connectionMap = genome.getConnectionGeneList().stream()
             .filter(ConnectionGene::isEnabled)
@@ -31,7 +34,33 @@ public class GenomeService {
         inputNodes.stream()
             .flatMap(n -> n.connections.stream())
             .forEach(conn -> conn.outNode = nodeMap.get(conn.outNode.nodeId).get(0));
+        pruneNetwork(inputNodes);
         return new Network(inputNodes);
+    }
+
+    private void pruneNetwork(List<Node> inputs) {
+        inputs.forEach(this::pruneNetwork);
+    }
+
+    private void pruneNetwork(Node node) {
+        List<Connection> connections = node.connections.stream()
+            .filter(c -> !shouldRemoveConnection(c))
+            .toList();
+        connections
+            .forEach(c -> pruneNetwork(c.outNode));
+        node.connections = connections;
+    }
+
+    private boolean shouldRemoveNode(Node node) {
+        return !alwaysKeep(node) && (node.connections.isEmpty() || node.connections.stream().anyMatch(c -> !shouldRemoveConnection(c)));
+    }
+
+    private boolean shouldRemoveConnection(Connection connection) {
+        return shouldRemoveNode(connection.outNode);
+    }
+
+    private boolean alwaysKeep(Node node) {
+        return node.nodeId <= LAST_INPUT_NODE || node.nodeId >= FIRST_OUTPUT_NODE
     }
 
     private Node getNextLevel(List<ConnectionGene> currentConnections, int nodeId, Map<Integer, List<ConnectionGene>> connectionMap) {
