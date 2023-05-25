@@ -198,8 +198,21 @@ public class Game {
             .collect(Collectors.joining(" ")));
     }
 
+    protected static List<Player> getPlayerOrderForPlayer(Player player, Player[] players) {
+        List<Player> correctOrder = new ArrayList<>();
+        int correctOrderIndex = 0;
+        for (int i = 0; i < players.length; i++) {
+            if (players[i].equals(player)) {
+                correctOrderIndex = 0;
+            }
+            correctOrder.add(correctOrderIndex, players[i]);
+            correctOrderIndex++;
+        }
+        return correctOrder;
+    }
+
     protected Marble chooseMarbleToMove(Player player, List<Marble> canMove, int diceRoll, int numSixes) {
-        List<Integer> positions = Arrays.stream(players)
+        List<Integer> positions = getPlayerOrderForPlayer(player, players).stream()
             .flatMap(p -> p.marbles().stream()
                 .map(m -> p.startBoard().getMarblePositionOnTable(m)))
             .toList();
