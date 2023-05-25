@@ -246,14 +246,15 @@ public class Genome implements Comparable {
         generateNetwork();
         if (connectionGeneList.size() > 0) {
             int timeoutCount = 0;
+            int nextNode = nodes.size() - NEAT_Config.OUTPUTS;
             ConnectionGene randomCon = connectionGeneList.get(rand.nextInt(connectionGeneList.size()));
-            while (!randomCon.isEnabled()) {
+            while (!randomCon.isEnabled() || nextNode > randomCon.getOut() || nextNode < randomCon.getInto()) {
                 randomCon = connectionGeneList.get(rand.nextInt(connectionGeneList.size()));
                 timeoutCount++;
-                if (timeoutCount > NEAT_Config.HIDDEN_NODES)
+                if (timeoutCount > NEAT_Config.HIDDEN_NODES) {
                     return;
+                }
             }
-            int nextNode = nodes.size() - NEAT_Config.OUTPUTS;
             randomCon.setEnabled(false);
             connectionGeneList.add(new ConnectionGene(randomCon.getInto(), nextNode, 1, true));        // Add innovation and weight
             connectionGeneList.add(new ConnectionGene(nextNode, randomCon.getOut(), randomCon.getWeight(), true));
