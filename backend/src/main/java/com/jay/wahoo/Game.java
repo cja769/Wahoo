@@ -104,7 +104,7 @@ public class Game {
                 if (verbose) {
                     System.out.println("Player " + currentPlayer.identifier() + " rolled 3 sixes");
                 }
-                gameBoard.resetFurthestMarble(currentPlayer);
+                gameBoard.resetFurthestMarble(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
                 sixCount = 0;
                 rolledThreeSixes = true;
             } else {
