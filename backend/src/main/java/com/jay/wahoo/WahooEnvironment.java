@@ -57,25 +57,27 @@ public class WahooEnvironment implements Environment {
         return threads.submit(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
-            for (int i = 1; i < 4; i++) {
-                currentGame.add(players.get(0));
-                currentGame.add(players.get(i));
-                for (int j = 1; j < 4; j++) {
-                    if (i != j) {
-                        currentGame.add(players.get(j));
+            for (int rounds = 0; rounds < 100; rounds++) {
+                for (int i = 1; i < 4; i++) {
+                    currentGame.add(players.get(0));
+                    currentGame.add(players.get(i));
+                    for (int j = 1; j < 4; j++) {
+                        if (i != j) {
+                            currentGame.add(players.get(j));
+                        }
                     }
+                    List<Genome> winners = new Game(currentGame, false).play();
+                    winners.forEach(w -> {
+                        Integer wins = winnerMap.get(w);
+                        if (wins == null) {
+                            wins = 1;
+                        } else {
+                            wins++;
+                        }
+                        winnerMap.put(w, wins);
+                    });
+                    currentGame = new ArrayList<>();
                 }
-                List<Genome> winners = new Game(currentGame, false).play();
-                winners.forEach(w -> {
-                    Integer wins = winnerMap.get(w);
-                    if (wins == null) {
-                        wins = 1;
-                    } else {
-                        wins++;
-                    }
-                    winnerMap.put(w, wins);
-                });
-                currentGame = new ArrayList<>();
             }
             Integer mostWins = winnerMap.entrySet().stream()
                 .max(Comparator.comparing(Entry::getValue))
