@@ -65,7 +65,7 @@ public class GameService {
     }
 
     public Game createGame() throws IOException {
-        Game game = new Game(poolService.getPlayersFromPool(poolService.getPool(), 4), false);
+        Game game = new Game(poolService.getPlayers(), false);
         gameMap.put(game.identifier, game);
         sendGameStateUpdate(game);
         return game;
