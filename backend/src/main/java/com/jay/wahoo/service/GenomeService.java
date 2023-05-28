@@ -60,7 +60,7 @@ public class GenomeService {
     }
 
     private boolean alwaysKeep(Node node) {
-        return node.nodeId <= LAST_INPUT_NODE || node.nodeId >= FIRST_OUTPUT_NODE
+        return node.nodeId <= LAST_INPUT_NODE || node.nodeId >= FIRST_OUTPUT_NODE;
     }
 
     private Node getNextLevel(List<ConnectionGene> currentConnections, int nodeId, Map<Integer, List<ConnectionGene>> connectionMap) {
