@@ -57,8 +57,11 @@ public class WahooEnvironment implements Environment {
         return threads.submit(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
-            for (int rounds = 0; rounds < 20; rounds++) {
-                for (int i = 1; i < 4; i++) {
+            int rounds = 20;
+            int maxGames = rounds * 3;
+            boolean shouldBreak = false;
+            for (int round = 0; round < rounds && !shouldBreak; round++) {
+                for (int i = 1; i < 4 && !shouldBreak; i++) {
                     currentGame.add(players.get(0));
                     currentGame.add(players.get(i));
                     for (int j = 1; j < 4; j++) {
@@ -76,6 +79,7 @@ public class WahooEnvironment implements Environment {
                         }
                         winnerMap.put(w, wins);
                     });
+                    shouldBreak = shouldShortCircuit(round, 3, i, maxGames, winnerMap.values());
                     currentGame = new ArrayList<>();
                 }
             }
@@ -88,5 +92,18 @@ public class WahooEnvironment implements Environment {
                 .map(Map.Entry::getKey)
                 .toList();
         });
+    }
+
+    protected static boolean shouldShortCircuit(int roundsComplete, int gamesInRound, int gamesFinishedInRound, int maxGames, Collection<Integer> wins) {
+        int playedGames = (roundsComplete * gamesInRound) + gamesFinishedInRound;
+        int remainingGames = maxGames - playedGames;
+        Integer maxWins = wins.stream()
+            .max(Integer::compareTo)
+            .orElse(0);
+        int possibleWinners = wins.stream()
+            .filter(numWins -> (numWins + remainingGames) >= maxWins)
+            .toList()
+            .size();
+        return possibleWinners == 1;
     }
 }
