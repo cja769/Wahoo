@@ -46,6 +46,7 @@ public class WahooEnvironment implements Environment {
         }
         if (players.size() == 4) {
             inProgress.add(playMatch(players, threads));
+            players = new ArrayList<>();
         }
         List<Genome> winners = new ArrayList<>();
         log.info("There's " + players.size() + " number of players that were ommitted from matches");
@@ -54,10 +55,10 @@ public class WahooEnvironment implements Environment {
             if (inProgress.get(0).isDone()) {
                 try {
                     winners.add(inProgress.get(0).get());
+                    inProgress.remove(0);
                 } catch (Throwable t) {
                     log.error("Error running match", t);
                 }
-                inProgress.remove(0);
             }
         }
         threads.shutdown();
