@@ -166,9 +166,9 @@ public class Pool {
         calculateGenomeAdjustedFitness();
         ArrayList<Species> survived = new ArrayList<>();
         boolean wasStale = removeStaleSpecies();
-        trimSpecies();
         log.info("The pool " + (wasStale ? "was" : "wasn't") + " stale");
-        for (Species s : species) {
+        for (int index = 0; index < getNumberOfSpecies(); index++) {
+            Species s = species.get(index);
             Species newSpecies = new Species(s.getTopGenome());
             survived.add(newSpecies);
             for (int i = 1; i < getSizeOfSpecies(); i++) {
@@ -191,14 +191,6 @@ public class Pool {
         survived.addAll(newSpecies);
         species = survived;
         generations++;
-    }
-
-    private void trimSpecies() {
-        if (species.size() > getNumberOfSpecies()) {
-            for (int i = getNumberOfSpecies(); i < species.size(); i++) {
-                species.remove(i);
-            }
-        }
     }
 
     @JsonIgnore
