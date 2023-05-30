@@ -29,7 +29,9 @@ public class TrainingService {
                 while (true) {
                     try {
                         train(1);
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                        log.error("An error occurred training", e);
+                    }
                 }
             }).subscribeOn(Schedulers.boundedElastic()).subscribe();
         }
