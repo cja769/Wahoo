@@ -46,29 +46,6 @@ public class Species implements Comparable{
         Collections.sort(genomes,Collections.reverseOrder());
     }
 
-    public void removeWeakGenomes(boolean allButOne){
-        sortGenomes();
-        int surviveCount = 1;
-        if(!allButOne)
-            surviveCount = (int)Math.ceil(genomes.size()/2f);
-
-        ArrayList<Genome> survivedGenomes = new ArrayList<>();
-        for(int i=0; i<surviveCount; i++){
-            survivedGenomes.add(new Genome(genomes.get(i)));
-        }
-        genomes = survivedGenomes;
-    }
-
-    @Deprecated
-    public void removeWeakGenome(int childrenToRemove){
-        sortGenomes();
-        ArrayList<Genome> survived = new ArrayList<>();
-        for (int i = 0; i < genomes.size() - childrenToRemove; i++) {
-            survived.add(genomes.get(i));
-        }
-        genomes = survived;
-    }
-
     @JsonIgnore
     public Genome getTopGenome(){
         sortGenomes();

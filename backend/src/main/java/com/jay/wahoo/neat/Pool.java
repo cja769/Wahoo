@@ -6,11 +6,13 @@ package com.jay.wahoo.neat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jay.wahoo.neat.config.NEAT_Config;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 public class Pool {
 
 
@@ -57,7 +59,11 @@ public class Pool {
     }
 
     public void evaluateFitness(Environment environment){
+        environment.evaluateFitness(getAllGenomes());
+        rankGlobally();
+    }
 
+    private ArrayList<Genome> getAllGenomes() {
         ArrayList<Genome> allGenome = new ArrayList<>();
 
         for(Species s: species){
@@ -65,10 +71,9 @@ public class Pool {
                 allGenome.add(g);
             }
         }
-
-        environment.evaluateFitness(allGenome);
-        rankGlobally();
+        return allGenome;
     }
+
     // experimental
     private void rankGlobally(){                // set fitness to rank
         ArrayList<Genome> allGenome = new ArrayList<>();
@@ -110,12 +115,14 @@ public class Pool {
         return total;
     }
 
-    public void removeStaleSpecies(){
+    public boolean removeStaleSpecies(){
         ArrayList<Species> survived = new ArrayList<>();
 
         if(topFitness<getTopFitness()){
             poolStaleness = 0;
+            topFitness = getTopFitness();
         }
+
 
         for(Species s: species){
             Genome top  = s.getTopGenome();
@@ -134,13 +141,17 @@ public class Pool {
 
         Collections.sort(survived,Collections.reverseOrder());
 
+        boolean poolStale = false;
         if(poolStaleness>NEAT_Config.STALE_POOL){
-            for(int i = survived.size(); i>1 ;i--)
-            survived.remove(i);
+            Species newBase = survived.get(0);
+            survived = new ArrayList<>();
+            survived.add(newBase);
+            poolStale = true;
         }
 
         species = survived;
         poolStaleness++;
+        return poolStale;
     }
 
     public void calculateGenomeAdjustedFitness(){
@@ -151,11 +162,15 @@ public class Pool {
 
     @JsonIgnore
     public void breedNewGeneration() {
+        log.info("Breeding new generation");
         calculateGenomeAdjustedFitness();
         ArrayList<Species> survived = new ArrayList<>();
-        removeStaleSpecies();
+        boolean wasStale = removeStaleSpecies();
+        log.info("The pool " + (wasStale ? "was" : "wasn't") + " stale");
+        log.info("There's " + species.size() + " species");
+        log.info("Target number of species is " + getNumberOfSpecies());
+        log.info("Size of species is " + getSizeOfSpecies());
         for (Species s : species) {
-            s.removeWeakGenomes(false);
             Species newSpecies = new Species(s.getTopGenome());
             survived.add(newSpecies);
             for (int i = 1; i < getSizeOfSpecies(); i++) {
@@ -178,6 +193,7 @@ public class Pool {
         survived.addAll(newSpecies);
         species = survived;
         generations++;
+        log.info("There's now " + getAllGenomes().size() + " genomes");
     }
 
     @JsonIgnore
