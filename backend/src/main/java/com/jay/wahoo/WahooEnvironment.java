@@ -48,11 +48,15 @@ public class WahooEnvironment implements Environment {
             inProgress.add(playMatch(players, threads));
         }
         List<Genome> winners = new ArrayList<>();
+        log.info("There's " + players.size() + " number of players that were ommitted from matches");
+        log.info("Number of in progress matches " + inProgress.size());
         while (!inProgress.isEmpty()) {
             if (inProgress.get(0).isDone()) {
                 try {
                     winners.add(inProgress.get(0).get());
-                } catch (Throwable t) {}
+                } catch (Throwable t) {
+                    log.error("Error running match", t);
+                }
                 inProgress.remove(0);
             }
         }
@@ -64,7 +68,7 @@ public class WahooEnvironment implements Environment {
         return threads.submit(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
-            int rounds = 2;
+            int rounds = 20;
             int maxGames = rounds * 3;
             boolean shouldBreak = false;
             for (int round = 0; round < rounds && !shouldBreak; round++) {

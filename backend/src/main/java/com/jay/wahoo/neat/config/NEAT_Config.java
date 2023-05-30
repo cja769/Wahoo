@@ -8,7 +8,7 @@ public class NEAT_Config {
     public static final int INPUTS = 18;
     public static final int OUTPUTS = 4;
     public static final int HIDDEN_NODES = 1000000;
-    public static final int POPULATION = 1024;
+    public static final int POPULATION = 128;
 
     public static final float COMPATIBILITY_THRESHOLD = 1;
     public static final float EXCESS_COEFFICENT = 2;
