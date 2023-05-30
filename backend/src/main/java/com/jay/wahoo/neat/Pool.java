@@ -51,7 +51,7 @@ public class Pool {
     }
 
     private int getNumberOfSpecies() {
-        return 10;
+        return 8;
     }
 
     public int getGenerations() {
@@ -167,9 +167,6 @@ public class Pool {
         ArrayList<Species> survived = new ArrayList<>();
         boolean wasStale = removeStaleSpecies();
         log.info("The pool " + (wasStale ? "was" : "wasn't") + " stale");
-        log.info("There's " + species.size() + " species");
-        log.info("Target number of species is " + getNumberOfSpecies());
-        log.info("Size of species is " + getSizeOfSpecies());
         for (Species s : species) {
             Species newSpecies = new Species(s.getTopGenome());
             survived.add(newSpecies);
@@ -193,7 +190,6 @@ public class Pool {
         survived.addAll(newSpecies);
         species = survived;
         generations++;
-        log.info("There's now " + getAllGenomes().size() + " genomes");
     }
 
     @JsonIgnore
