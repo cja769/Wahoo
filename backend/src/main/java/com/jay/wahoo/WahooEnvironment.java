@@ -49,13 +49,14 @@ public class WahooEnvironment implements Environment {
             players = new ArrayList<>();
         }
         List<Genome> winners = new ArrayList<>();
-        log.info("There's " + players.size() + " number of players that were ommitted from matches");
+        log.info("There's " + players.size() + " number of players that were omitted from matches");
         log.info("Number of in progress matches " + inProgress.size());
         while (!inProgress.isEmpty()) {
             if (inProgress.get(0).isDone()) {
                 try {
                     winners.add(inProgress.get(0).get());
                     inProgress.remove(0);
+                    log.info("Number of in progress matches " + inProgress.size());
                 } catch (Throwable t) {
                     log.error("Error running match", t);
                 }
