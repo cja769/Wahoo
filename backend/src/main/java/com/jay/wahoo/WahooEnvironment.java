@@ -3,37 +3,45 @@ package com.jay.wahoo;
 import com.jay.wahoo.neat.Environment;
 import com.jay.wahoo.neat.Genome;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 @Slf4j
 public class WahooEnvironment implements Environment {
     @Override
     public void evaluateFitness(ArrayList<Genome> population) {
-        List<Genome> remaining = population;
-        int round = 1;
-        while (remaining.size() >= 4) {
-            log.info("Starting round " + round);
-            log.info("Population Size: " + remaining.size());
-            remaining = playRound(remaining);
-            log.info("Round " + round + " complete.");
-            round++;
-        }
-        remaining.forEach(g -> g.setFitness(g.getFitness() + g.getFitness()));
+        start(Mono.just(population))
+            .map(remaining -> {
+                remaining.forEach(g -> g.setFitness(g.getFitness() + g.getFitness()));
+                return remaining;
+            }).subscribe();
     }
 
-    protected List<Genome> playRound(List<Genome> population) {
+    protected Mono<List<Genome>> start(Mono<List<Genome>> population) {
+        return population
+            .flatMap(pop -> {
+                if (pop.size() >= 4) {
+                    return start(playRound(pop));
+                }
+                return Mono.just(pop);
+            });
+    }
+
+    protected Mono<List<Genome>> playRound(List<Genome> population) {
         List<Genome> players = new ArrayList<>();
-        List<Future<Genome>> inProgress = new ArrayList<>();
+        List<Mono<Genome>> inProgress = new ArrayList<>();
         population.forEach(g -> g.setFitness(0));
-        final ExecutorService threads = Executors.newFixedThreadPool(2);
         for (int i = 0; i < population.size(); i++) {
             if (players.size() == 4) {
-                inProgress.add(playMatch(players, threads));
+                inProgress.add(playMatch(players));
                 players = new ArrayList<>();
             }
             Genome player = population.get(i);
@@ -45,29 +53,15 @@ public class WahooEnvironment implements Environment {
             players.add(player);
         }
         if (players.size() == 4) {
-            inProgress.add(playMatch(players, threads));
-            players = new ArrayList<>();
+            inProgress.add(playMatch(players));
         }
-        List<Genome> winners = new ArrayList<>();
-        log.info("There's " + players.size() + " number of players that were omitted from matches");
-        log.info("Number of in progress matches " + inProgress.size());
-        while (!inProgress.isEmpty()) {
-            if (inProgress.get(0).isDone()) {
-                try {
-                    winners.add(inProgress.get(0).get());
-                    inProgress.remove(0);
-                    log.info("Number of in progress matches " + inProgress.size());
-                } catch (Throwable t) {
-                    log.error("Error running match", t);
-                }
-            }
-        }
-        threads.shutdown();
-        return winners;
+        return Flux.fromIterable(inProgress)
+            .flatMap(Function.identity(), 2)
+            .collectList();
     }
 
-    protected Future<Genome> playMatch(List<Genome> players, ExecutorService threads) {
-        return threads.submit(() -> {
+    protected Mono<Genome> playMatch(List<Genome> players) {
+        return Mono.defer(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
             int rounds = 20;
@@ -100,12 +94,12 @@ public class WahooEnvironment implements Environment {
                 .max(Comparator.comparing(Entry::getValue))
                 .map(Entry::getValue)
                 .get();
-            return winnerMap.entrySet().stream()
+            return Mono.just(winnerMap.entrySet().stream()
                 .filter(entry -> entry.getValue() != mostWins)
                 .map(Map.Entry::getKey)
                 .toList()
-                .get(0);
-        });
+                .get(0));
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     protected static boolean shouldShortCircuit(int roundsComplete, int gamesInRound, int gamesFinishedInRound, int maxGames, Collection<Integer> wins) {
