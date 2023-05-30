@@ -28,6 +28,7 @@ public class WahooEnvironment implements Environment {
     protected Mono<List<Genome>> start(Mono<List<Genome>> population) {
         return population
             .flatMap(pop -> {
+                log.info("Population size is " + pop.size());
                 if (pop.size() >= 4) {
                     return start(playRound(pop));
                 }
@@ -94,11 +95,11 @@ public class WahooEnvironment implements Environment {
                 .max(Comparator.comparing(Entry::getValue))
                 .map(Entry::getValue)
                 .get();
-            return Mono.just(winnerMap.entrySet().stream()
-                .filter(entry -> entry.getValue() != mostWins)
-                .map(Map.Entry::getKey)
-                .toList()
-                .get(0));
+            List<Genome> winners = winnerMap.entrySet().stream()
+                .filter(entry -> entry.getValue() == mostWins)
+                .map(Entry::getKey)
+                .toList();
+            return Mono.just(winners.get(0));
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
