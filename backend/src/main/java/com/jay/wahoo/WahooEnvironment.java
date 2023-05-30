@@ -21,7 +21,7 @@ public class WahooEnvironment implements Environment {
 
     protected List<Genome> playRound(List<Genome> population) {
         List<Genome> players = new ArrayList<>();
-        List<Future<List<Genome>>> inProgress = new ArrayList<>();
+        List<Future<Genome>> inProgress = new ArrayList<>();
         population.forEach(g -> g.setFitness(0));
         final ExecutorService threads = Executors.newFixedThreadPool(2);
         for (int i = 0; i < population.size(); i++) {
@@ -44,7 +44,7 @@ public class WahooEnvironment implements Environment {
         while (!inProgress.isEmpty()) {
             if (inProgress.get(0).isDone()) {
                 try {
-                    winners.addAll(inProgress.get(0).get());
+                    winners.add(inProgress.get(0).get());
                 } catch (Throwable t) {}
                 inProgress.remove(0);
             }
@@ -53,7 +53,7 @@ public class WahooEnvironment implements Environment {
         return winners;
     }
 
-    protected Future<List<Genome>> playMatch(List<Genome> players, ExecutorService threads) {
+    protected Future<Genome> playMatch(List<Genome> players, ExecutorService threads) {
         return threads.submit(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
@@ -90,7 +90,8 @@ public class WahooEnvironment implements Environment {
             return winnerMap.entrySet().stream()
                 .filter(entry -> entry.getValue() != mostWins)
                 .map(Map.Entry::getKey)
-                .toList();
+                .toList()
+                .get(0);
         });
     }
 
