@@ -30,19 +30,19 @@ public class WahooEnvironment implements Environment {
             .flatMap(pop -> {
                 log.info("Population size is " + pop.size());
                 if (pop.size() >= 4) {
-                    return start(playRound(pop));
+                    return start(playRound(pop, pop.size() == 4 ? 1 : 2));
                 }
                 return Mono.just(pop);
             });
     }
 
-    protected Mono<List<Genome>> playRound(List<Genome> population) {
+    protected Mono<List<Genome>> playRound(List<Genome> population, int numWinnersToReturn) {
         List<Genome> players = new ArrayList<>();
         List<Mono<List<Genome>>> inProgress = new ArrayList<>();
         population.forEach(g -> g.setFitness(0));
         for (int i = 0; i < population.size(); i++) {
             if (players.size() == 4) {
-                inProgress.add(playMatch(players));
+                inProgress.add(playMatch(players, numWinnersToReturn));
                 players = new ArrayList<>();
             }
             Genome player = population.get(i);
@@ -54,7 +54,7 @@ public class WahooEnvironment implements Environment {
             players.add(player);
         }
         if (players.size() == 4) {
-            inProgress.add(playMatch(players));
+            inProgress.add(playMatch(players, numWinnersToReturn));
         }
         return Flux.fromIterable(inProgress)
             .flatMap(Function.identity(), 2)
@@ -62,7 +62,7 @@ public class WahooEnvironment implements Environment {
             .collectList();
     }
 
-    protected Mono<List<Genome>> playMatch(List<Genome> players) {
+    protected Mono<List<Genome>> playMatch(List<Genome> players, int numWinnersToReturn) {
         return Mono.defer(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
@@ -94,7 +94,7 @@ public class WahooEnvironment implements Environment {
             }
             List<Genome> winners = winnerMap.entrySet().stream()
                 .sorted(Entry.comparingByValue(Comparator.reverseOrder()))
-                .limit(2)
+                .limit(numWinnersToReturn)
                 .map(Entry::getKey)
                 .toList();
             return Mono.just(winners);
