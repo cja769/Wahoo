@@ -17,9 +17,10 @@ public class WahooEnvironment implements Environment {
         List<Genome> remaining = population;
         int round = 1;
         while (remaining.size() >= 4) {
+            log.info("Starting round " + round);
+            log.info("Population Size: " + remaining.size());
             remaining = playRound(remaining);
             log.info("Round " + round + " complete.");
-            log.info("Remaining genomes: " + remaining.size());
             round++;
         }
         remaining.forEach(g -> g.setFitness(g.getFitness() + g.getFitness()));
