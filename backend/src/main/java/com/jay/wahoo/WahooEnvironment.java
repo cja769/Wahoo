@@ -57,7 +57,7 @@ public class WahooEnvironment implements Environment {
         return threads.submit(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
-            int rounds = 20;
+            int rounds = 2;
             int maxGames = rounds * 3;
             boolean shouldBreak = false;
             for (int round = 0; round < rounds && !shouldBreak; round++) {
