@@ -38,7 +38,7 @@ public class WahooEnvironment implements Environment {
 
     protected Mono<List<Genome>> playRound(List<Genome> population) {
         List<Genome> players = new ArrayList<>();
-        List<Mono<Genome>> inProgress = new ArrayList<>();
+        List<Mono<List<Genome>>> inProgress = new ArrayList<>();
         population.forEach(g -> g.setFitness(0));
         for (int i = 0; i < population.size(); i++) {
             if (players.size() == 4) {
@@ -58,10 +58,11 @@ public class WahooEnvironment implements Environment {
         }
         return Flux.fromIterable(inProgress)
             .flatMap(Function.identity(), 2)
+            .flatMap(Flux::fromIterable)
             .collectList();
     }
 
-    protected Mono<Genome> playMatch(List<Genome> players) {
+    protected Mono<List<Genome>> playMatch(List<Genome> players) {
         return Mono.defer(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
@@ -91,15 +92,12 @@ public class WahooEnvironment implements Environment {
                     currentGame = new ArrayList<>();
                 }
             }
-            Integer mostWins = winnerMap.entrySet().stream()
-                .max(Comparator.comparing(Entry::getValue))
-                .map(Entry::getValue)
-                .get();
             List<Genome> winners = winnerMap.entrySet().stream()
-                .filter(entry -> entry.getValue() == mostWins)
+                .sorted(Entry.comparingByValue())
+                .limit(2)
                 .map(Entry::getKey)
                 .toList();
-            return Mono.just(winners.get(0));
+            return Mono.just(winners);
         }).subscribeOn(Schedulers.boundedElastic());
     }
 

@@ -162,11 +162,9 @@ public class Pool {
 
     @JsonIgnore
     public void breedNewGeneration() {
-        log.info("Breeding new generation");
         calculateGenomeAdjustedFitness();
         ArrayList<Species> survived = new ArrayList<>();
-        boolean wasStale = removeStaleSpecies();
-        log.info("The pool " + (wasStale ? "was" : "wasn't") + " stale");
+        removeStaleSpecies();
         for (int index = 0; index < getNumberOfSpecies(); index++) {
             Species s = species.get(index);
             Species newSpecies = new Species(s.getTopGenome());
