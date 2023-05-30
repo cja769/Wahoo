@@ -2,6 +2,7 @@ package com.jay.wahoo;
 
 import com.jay.wahoo.neat.Environment;
 import com.jay.wahoo.neat.Genome;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -9,12 +10,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+@Slf4j
 public class WahooEnvironment implements Environment {
     @Override
     public void evaluateFitness(ArrayList<Genome> population) {
         List<Genome> remaining = population;
+        int round = 1;
         while (remaining.size() >= 4) {
             remaining = playRound(remaining);
+            log.info("Round " + round + " complete.");
+            log.info("Remaining genomes: " + remaining.size());
+            round++;
         }
         remaining.forEach(g -> g.setFitness(g.getFitness() + g.getFitness()));
     }
