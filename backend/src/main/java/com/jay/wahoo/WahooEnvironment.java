@@ -22,7 +22,7 @@ public class WahooEnvironment implements Environment {
             .map(remaining -> {
                 remaining.forEach(g -> g.setFitness(g.getFitness() + g.getFitness()));
                 return remaining;
-            }).subscribe();
+            }).block();
     }
 
     protected Mono<List<Genome>> start(Mono<List<Genome>> population) {
