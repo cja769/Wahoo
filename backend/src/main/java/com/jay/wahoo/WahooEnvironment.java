@@ -93,7 +93,7 @@ public class WahooEnvironment implements Environment {
                 }
             }
             List<Genome> winners = winnerMap.entrySet().stream()
-                .sorted(Entry.comparingByValue())
+                .sorted(Entry.comparingByValue(Comparator.reverseOrder()))
                 .limit(2)
                 .map(Entry::getKey)
                 .toList();
