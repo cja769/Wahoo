@@ -114,7 +114,7 @@ public class Game {
                     awaitingHumanMove = true;
                 } else {
                     if (!movableMarbles.isEmpty()) {
-                        Marble marbleToMove = chooseMarbleToMove(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, moves, diceRoll, sixCount);
+                        Marble marbleToMove = chooseMarbleToMove(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount);
                         gameBoard.move(marbleToMove, diceRoll);
                     }
                     incrementTurn();
@@ -206,8 +206,8 @@ public class Game {
             .collect(Collectors.joining(" ")));
     }
 
-    protected Marble chooseMarbleToMove(Player player, List<TestMove> moves, int diceRoll, int numSixes) {
-        return DeciderService.decide(player, moves, diceRoll, numSixes, players);
+    protected Marble chooseMarbleToMove(Player playingAs, Genome playing, List<TestMove> moves, int diceRoll, int numSixes) {
+        return DeciderService.decide(playingAs, playing, moves, diceRoll, numSixes, players);
     }
 
     protected int rollDie() {

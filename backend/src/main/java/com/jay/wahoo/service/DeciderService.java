@@ -3,6 +3,7 @@ package com.jay.wahoo.service;
 import com.jay.wahoo.Board.TestMove;
 import com.jay.wahoo.Marble;
 import com.jay.wahoo.Player;
+import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.neat.config.NEAT_Config;
 
 import java.util.*;
@@ -10,11 +11,21 @@ import java.util.Map.Entry;
 
 public class DeciderService {
 
-    public static Marble decide(Player player, List<TestMove> unsortedMoves, int diceRoll, int numSixes, Player[] players) {
+    /**
+     *
+     * @param playingAs The player to use for getting marbles. Basically who to impersonate in the event it's not the same as {@code actualPlayer}
+     * @param actualPlayer The genome who is making the decision
+     * @param unsortedMoves The moves for {@code playingAs}
+     * @param diceRoll The dice roll
+     * @param numSixes The number of sixes
+     * @param players All of the players
+     * @return The marble to move
+     */
+    public static Marble decide(Player playingAs, Genome actualPlayer, List<TestMove> unsortedMoves, int diceRoll, int numSixes, Player[] players) {
         List<TestMove> moves = unsortedMoves.stream()
             .sorted(Comparator.comparing(a -> a.marble.identifier()))
             .toList();
-        List<Marble> flattenedBoard = player.playerBoard().getFlattenedBoard();
+        List<Marble> flattenedBoard = playingAs.playerBoard().getFlattenedBoard();
         float[] inputs = new float[NEAT_Config.INPUTS];
         int inputIndex = 0;
         for (int i = 0; i < moves.size(); i++) {
@@ -23,7 +34,7 @@ public class DeciderService {
             inputs[inputIndex] = move.isMovable ? 1 : -1;
             inputIndex++;
             // Is new position out of home area (1, 22, 43, 64)
-            int marblePositionOnTable = player.startBoard().getMarblePositionOnTable(move.marble);
+            int marblePositionOnTable = playingAs.startBoard().getMarblePositionOnTable(move.marble);
             inputs[inputIndex] = marblePositionOnTable == -1 && move.newLocation != -1 ? 1 : -1;
             inputIndex++;
             // Is new location on left opponent start (2, 23, 44, 65)
@@ -66,12 +77,12 @@ public class DeciderService {
             inputs[inputIndex] = ((2 * teammateTableLocation) - 50) / 52f; // One less than normal board location because will never be safe but -1 is still used as not killed
             inputIndex++;
             List<Marble> opponentMarbles = Arrays.stream(players)
-                .filter(p -> p != player && p.partner() != player)
+                .filter(p -> p != playingAs && p.partner() != playingAs)
                 .map(Player::marbles)
                 .flatMap(Collection::stream)
                 .toList();
             List<Marble> teammateMarbles = Arrays.stream(players)
-                .filter(p -> p == player.partner())
+                .filter(p -> p == playingAs.partner())
                 .map(Player::marbles)
                 .flatMap(Collection::stream)
                 .toList();
@@ -104,9 +115,9 @@ public class DeciderService {
             inputs[inputIndex] = ((int) closestMarbleBehindTeammate) != -1 ? 1 : -1;
             inputIndex++;
         }
-        List<Player> playerOrderForPlayer = getPlayerOrderForPlayer(player, players);
+        List<Player> playerOrderForPlayer = getPlayerOrderForPlayer(playingAs, players);
         for (Player p : playerOrderForPlayer) {
-            if (p != player) {
+            if (p != playingAs) {
                 int inStart = p.startBoard().getNumberOfMarbles();
                 long inSafe = p.safeBoard().getNumberOfMarbles();
                 // Num marbles in start (84, 88, 92)
@@ -129,7 +140,7 @@ public class DeciderService {
         // Was roll a six (97)
         inputs[inputIndex] = diceRoll == 6 ? 1 : -1;
         // Bias (98) (added elsewhere)
-        return evaluate(inputs, player, moves.stream().filter(m -> m.isMovable).map(m -> m.marble).toList());
+        return evaluate(inputs, actualPlayer, moves.stream().filter(m -> m.isMovable).map(m -> m.marble).toList());
     }
 
     protected static float getClosestMarbleInFront(Marble startingMarble, List<Marble> flattenedBoard, List<Marble> matching) {
@@ -160,22 +171,8 @@ public class DeciderService {
             .orElse(-1f);
     }
 
-    public static Marble decideLegacy(Player player, List<Marble> canMove, int diceRoll, int numSixes, Player[] players) {
-        List<Integer> positions = getPlayerOrderForPlayer(player, players).stream()
-            .flatMap(p -> p.marbles().stream()
-                .map(m -> p.startBoard().getMarblePositionOnTable(m)))
-            .toList();
-        float[] inputs = new float[NEAT_Config.INPUTS];
-        for (int i = 0; i < positions.size(); i++) {
-            inputs[i] = positions.get(i);
-        }
-        inputs[NEAT_Config.INPUTS - 2] = diceRoll;
-        inputs[NEAT_Config.INPUTS - 1] = numSixes;
-        return evaluate(inputs, player, canMove);
-    }
-
-    protected static Marble evaluate(float[] inputs, Player player, List<Marble> canMove) {
-        float[] outputs = player.genome().evaluateNetwork(inputs);
+    protected static Marble evaluate(float[] inputs, Genome player, List<Marble> canMove) {
+        float[] outputs = player.evaluateNetwork(inputs);
         Map<Marble, Float> possible = new HashMap<>();
         canMove
             .stream()
