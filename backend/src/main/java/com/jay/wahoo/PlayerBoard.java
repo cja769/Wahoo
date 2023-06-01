@@ -1,9 +1,14 @@
 package com.jay.wahoo;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 public class PlayerBoard implements ContainingBoard {
 
     private PlayerBoard nextPlayerBoard;
     private SafeBoard nextSafeBoard;
+    private Player player;
     private final int NUM_SPOTS_BEFORE_SAFE = 10;
     private final Marble[] area = new Marble[14];
 
@@ -15,22 +20,32 @@ public class PlayerBoard implements ContainingBoard {
         this.nextSafeBoard = safeBoard;
     }
 
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
     @Override
-    public boolean testMove(Marble m, int move) {
+    public TestMove testMove(Marble m, int move, int priorBoardSpots) {
         Integer position = findMarblePosition(m).orElse(-1);
+        int adjustedPriorBoardSpots = priorBoardSpots - position;
         for (int i = move; i > 0; i--) {
             position++;
             if (position >= NUM_SPOTS_BEFORE_SAFE && m.player().equals(nextSafeBoard.getPlayer())) {
-                return nextSafeBoard.testMove(m, i);
+                return nextSafeBoard.testMove(m, i, adjustedPriorBoardSpots + position - 1);
             }
             if (position >= area.length) {
-                return nextPlayerBoard.testMove(m, i);
+                return nextPlayerBoard.testMove(m, i, adjustedPriorBoardSpots + position - 1);
             }
             if (area[position] != null && area[position].player().equals(m.player())) {
-                return false;
+                return new TestMove(m.player().startBoard().getMarblePositionOnTable(m), m);
             }
         }
-        return true;
+        boolean isOnStart = position == 0;
+        boolean isOnLeftOpponentStart = nextPlayerBoard.player.equals(m.player()) && isOnStart;
+        boolean isOnRightOpponentStart = nextPlayerBoard.player.equals(m.player().partner()) && isOnStart;
+        boolean isOnTeammateStart = this.player.equals(m.player().partner()) && isOnStart;
+        int location = adjustedPriorBoardSpots + position;
+        return new TestMove(true, Optional.ofNullable(area[position]), isOnLeftOpponentStart, isOnRightOpponentStart, isOnTeammateStart, location, -1, m);
     }
 
     @Override
@@ -51,6 +66,29 @@ public class PlayerBoard implements ContainingBoard {
             area[position + move] = m;
         }
 
+    }
+
+    public List<Marble> getFlattenedBoard() {
+        List<Marble> board = areaToList();
+        board.addAll(nextPlayerBoard.getFlattenedBoardInternal(player));
+        return board;
+    }
+
+    private List<Marble> areaToList() {
+        List<Marble> board = new ArrayList<>();
+        for (int i = 0 ; i < area.length; i++) {
+            board.add(area[i]);
+        }
+        return board;
+    }
+
+    private List<Marble> getFlattenedBoardInternal(Player player) {
+        if (this.player == player) {
+            return new ArrayList<>();
+        }
+        List<Marble> board = areaToList();
+        board.addAll(nextPlayerBoard.getFlattenedBoardInternal(player));
+        return board;
     }
 
     public boolean restFurthestMarble(Player p) {

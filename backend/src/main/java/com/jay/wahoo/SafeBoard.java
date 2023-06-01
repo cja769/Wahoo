@@ -1,5 +1,9 @@
 package com.jay.wahoo;
 
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
+
 public class SafeBoard implements ContainingBoard {
 
     private final Marble[] area = new Marble[6];
@@ -14,29 +18,42 @@ public class SafeBoard implements ContainingBoard {
     }
 
     public boolean isComplete() {
-        for (int i = 2; i < area.length; i++) {
-            if (area[i] == null) {
-                return false;
+        return getNumberOfMarblesComplete() == 4;
+    }
+
+    public int getNumberOfMarblesComplete() {
+        int numComplete = 0;
+        for (int i = area.length - 1; i > 1; i--) {
+            if (area[i] != null) {
+                numComplete++;
+            } else {
+                break;
             }
         }
-        return true;
+        return numComplete;
+    }
+
+    public long getNumberOfMarbles() {
+        return Arrays.stream(area)
+            .filter(Objects::nonNull)
+            .count();
     }
 
     @Override
-    public boolean testMove(Marble m, int move) {
+    public TestMove testMove(Marble m, int move, int priorBoardSpots) {
         Integer position = findMarblePosition(m)
             .orElse(-1);
         for (int i = 0; i < move; i++) {
             position++;
             if (position >= area.length) {
-                return false;
+                return new TestMove(52, position, m);
             }
             Marble marbleAtLocation = area[position];
             if (marbleAtLocation != null) {
-                return false;
+                return new TestMove(52, position, m);
             }
         }
-        return true;
+        return new TestMove(true, Optional.empty(), false, false, false, 52, position, m);
     }
 
     @Override
@@ -45,6 +62,9 @@ public class SafeBoard implements ContainingBoard {
             .orElse(-1);
         if (startingPos > -1) {
             area[startingPos] = null;
+        }
+        if ((startingPos + move) >= area.length) {
+            throw new IllegalArgumentException("This move is not legal");
         }
         area[startingPos + move] = m;
     }

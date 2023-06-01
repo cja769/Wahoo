@@ -7,8 +7,11 @@ public class StartBoard implements ContainingBoard {
     private final Marble[] area = new Marble[4];
 
     @Override
-    public boolean testMove(Marble m, int move) {
-        return (move == 1 || move == 6) && m.player().playerBoard().testMove(m, 1);
+    public TestMove testMove(Marble m, int move, int priorBoardSpots) {
+        if (!(move == 1 || move == 6)) {
+            return new TestMove(-1, m);
+        }
+        return m.player().playerBoard().testMove(m, 1, priorBoardSpots);
     }
 
     @Override

@@ -1,14 +1,12 @@
-package com.jay.wahoo;
+package com.jay.wahoo.service;
 
 import com.jay.wahoo.Game;
 import com.jay.wahoo.Player;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GameTest {
+public class DeciderServiceTest {
 
     @Test
     void test_getPlayerOrderForPlayer() {
@@ -21,9 +19,9 @@ public class GameTest {
         players[1] = p2;
         players[2] = p3;
         players[3] = p4;
-        assertThat(Game.getPlayerOrderForPlayer(p1, players)).containsExactly(p1, p2, p3, p4);
-        assertThat(Game.getPlayerOrderForPlayer(p2, players)).containsExactly(p2, p3, p4, p1);
-        assertThat(Game.getPlayerOrderForPlayer(p3, players)).containsExactly(p3, p4, p1, p2);
-        assertThat(Game.getPlayerOrderForPlayer(p4, players)).containsExactly(p4, p1, p2, p3);
+        assertThat(DeciderService.getPlayerOrderForPlayer(p1, players)).containsExactly(p1, p2, p3, p4);
+        assertThat(DeciderService.getPlayerOrderForPlayer(p2, players)).containsExactly(p2, p3, p4, p1);
+        assertThat(DeciderService.getPlayerOrderForPlayer(p3, players)).containsExactly(p3, p4, p1, p2);
+        assertThat(DeciderService.getPlayerOrderForPlayer(p4, players)).containsExactly(p4, p1, p2, p3);
     }
 }

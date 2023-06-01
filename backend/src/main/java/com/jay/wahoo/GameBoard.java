@@ -1,9 +1,11 @@
 package com.jay.wahoo;
 
+import com.jay.wahoo.Board.TestMove;
+
 import java.util.List;
 import java.util.stream.Stream;
 
-public class GameBoard implements Board {
+public class GameBoard {
     private final List<ContainingBoard> allBoards;
 
     public GameBoard(List<Player> players) {
@@ -12,12 +14,10 @@ public class GameBoard implements Board {
             .toList();
     }
 
-    @Override
-    public boolean testMove(Marble m, int move) {
-        return findBoardWithMarble(m).testMove(m, move);
+    public TestMove testMove(Marble m, int move) {
+        return findBoardWithMarble(m).testMove(m, move, m.player().startBoard().getMarblePositionOnTable(m));
     }
 
-    @Override
     public void move(Marble m, int move) {
         findBoardWithMarble(m).move(m, move);
     }

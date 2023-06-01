@@ -28,6 +28,7 @@ public class Player {
         this.safeBoard = new SafeBoard(this);
         this.startBoard = new StartBoard();
         this.playerBoard = new PlayerBoard();
+        this.playerBoard.setPlayer(this);
         for (int i = 0; i < 4; i++) {
             Marble marble = new Marble(this, i);
             marbles.add(marble);

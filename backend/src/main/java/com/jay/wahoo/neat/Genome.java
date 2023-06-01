@@ -146,7 +146,7 @@ public class Genome implements Comparable {
                         sum += nodes.get(conn.getInto()).getValue() * conn.getWeight();
                     }
                 }
-                node.setValue(sigmoid(sum));
+                node.setValue((float) Math.tanh(sum));
             }
         }
 
@@ -154,11 +154,6 @@ public class Genome implements Comparable {
             output[i] = nodes.get(NEAT_Config.INPUTS + NEAT_Config.HIDDEN_NODES + i).getValue();
         }
         return output;
-    }
-
-    private float sigmoid(float x) {
-        // TODO Auto-generated method stub
-        return (float) (1 / (1 + Math.exp(-4.9 * x)));
     }
 
     // Mutations

@@ -1,13 +1,13 @@
 package com.jay.wahoo;
 
+import com.jay.wahoo.Board.TestMove;
 import com.jay.wahoo.Player.PlayerState;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.neat.Genome;
-import com.jay.wahoo.neat.config.NEAT_Config;
+import com.jay.wahoo.service.DeciderService;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class Game {
@@ -108,12 +108,13 @@ public class Game {
                 sixCount = 0;
                 rolledThreeSixes = true;
             } else {
-                movableMarbles = getMovableMarbles(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
+                List<TestMove> moves = getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
+                movableMarbles = getMoveableMarbles(moves);
                 if (!movableMarbles.isEmpty() && currentPlayer.isHuman()) {
                     awaitingHumanMove = true;
                 } else {
                     if (!movableMarbles.isEmpty()) {
-                        Marble marbleToMove = chooseMarbleToMove(currentPlayer, movableMarbles, diceRoll, sixCount);
+                        Marble marbleToMove = chooseMarbleToMove(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, moves, diceRoll, sixCount);
                         gameBoard.move(marbleToMove, diceRoll);
                     }
                     incrementTurn();
@@ -124,9 +125,16 @@ public class Game {
         return new GameState(this);
     }
 
-    private List<Marble> getMovableMarbles(Player player) {
+    private List<TestMove> getMoves(Player player) {
         return player.marbles().stream()
-            .filter(m -> gameBoard.testMove(m, diceRoll))
+            .map(m -> gameBoard.testMove(m, diceRoll))
+            .toList();
+    }
+
+    private List<Marble> getMoveableMarbles(List<TestMove> moves) {
+        return moves.stream()
+            .filter(m -> m.isMovable)
+            .map(m -> m.marble)
             .toList();
     }
 
@@ -148,7 +156,7 @@ public class Game {
         if (!awaitingHumanMove) {
             throw new IllegalArgumentException("Can't move human because their moved is not being waited on");
         }
-        List<Marble> selectedMarbles = getMovableMarbles(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer).stream()
+        List<Marble> selectedMarbles = getMoveableMarbles(getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer)).stream()
             .filter(m -> m.player().identifier().equals(playerIdentifier) && m.identifier().equals(marbleIdentifier))
             .toList();
         if (selectedMarbles.isEmpty()) {
@@ -198,37 +206,8 @@ public class Game {
             .collect(Collectors.joining(" ")));
     }
 
-    protected static List<Player> getPlayerOrderForPlayer(Player player, Player[] players) {
-        List<Player> correctOrder = new ArrayList<>();
-        int correctOrderIndex = 0;
-        for (int i = 0; i < players.length; i++) {
-            if (players[i].equals(player)) {
-                correctOrderIndex = 0;
-            }
-            correctOrder.add(correctOrderIndex, players[i]);
-            correctOrderIndex++;
-        }
-        return correctOrder;
-    }
-
-    protected Marble chooseMarbleToMove(Player player, List<Marble> canMove, int diceRoll, int numSixes) {
-        List<Integer> positions = getPlayerOrderForPlayer(player, players).stream()
-            .flatMap(p -> p.marbles().stream()
-                .map(m -> p.startBoard().getMarblePositionOnTable(m)))
-            .toList();
-        float[] inputs = new float[NEAT_Config.INPUTS];
-        for (int i = 0; i < positions.size(); i++) {
-            inputs[i] = positions.get(i);
-        }
-        inputs[NEAT_Config.INPUTS - 2] = diceRoll;
-        inputs[NEAT_Config.INPUTS - 1] = numSixes;
-        float[] outputs = player.genome().evaluateNetwork(inputs);
-        Map<Marble, Float> possible = new HashMap<>();
-        canMove.forEach(m -> possible.put(m, outputs[m.identifier()]));
-        return possible.entrySet().stream()
-            .max(Entry.comparingByValue())
-            .map(Map.Entry::getKey)
-            .get();
+    protected Marble chooseMarbleToMove(Player player, List<TestMove> moves, int diceRoll, int numSixes) {
+        return DeciderService.decide(player, moves, diceRoll, numSixes, players);
     }
 
     protected int rollDie() {
