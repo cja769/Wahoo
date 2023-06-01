@@ -24,7 +24,7 @@ public class TrainingService {
 
     @PostConstruct
     public void init() {
-//        if (activeProfile.equals("production")) {
+        if (activeProfile.equals("production")) {
             Mono.defer(() -> {
                 while (true) {
                     try {
@@ -34,7 +34,7 @@ public class TrainingService {
                     }
                 }
             }).subscribeOn(Schedulers.boundedElastic()).subscribe();
-//        }
+        }
     }
 
     public void train(int numPasses) throws IOException {
