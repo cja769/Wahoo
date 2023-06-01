@@ -154,6 +154,15 @@ public class Pool {
         return poolStale;
     }
 
+    protected void removeUnderperformingGenomes() {
+        for (Species s : species) {
+            int keep = (int) (s.getGenomes().size() * NEAT_Config.SURVIVAL_RATE);
+            s.getGenomes().removeAll(s.getGenomes().stream()
+                .skip(keep)
+                .toList());
+        }
+    }
+
     public void calculateGenomeAdjustedFitness(){
         for (Species s: species) {
             s.calculateGenomeAdjustedFitness();
@@ -165,6 +174,7 @@ public class Pool {
         calculateGenomeAdjustedFitness();
         ArrayList<Species> survived = new ArrayList<>();
         removeStaleSpecies();
+        removeUnderperformingGenomes();
         for (int index = 0; index < getNumberOfSpecies(); index++) {
             Species s = species.get(index);
             Species newSpecies = new Species(s.getTopGenome());
