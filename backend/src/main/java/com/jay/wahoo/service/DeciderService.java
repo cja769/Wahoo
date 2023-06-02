@@ -8,6 +8,8 @@ import com.jay.wahoo.neat.config.NEAT_Config;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class DeciderService {
 
@@ -140,7 +142,7 @@ public class DeciderService {
         // Was roll a six (97)
         inputs[inputIndex] = diceRoll == 6 ? 1 : -1;
         // Bias (98) (added elsewhere)
-        return evaluate(inputs, actualPlayer, moves.stream().filter(m -> m.isMovable).map(m -> m.marble).toList());
+        return evaluate(inputs, actualPlayer, moves.stream().filter(m -> m.isMovable).map(m -> m.marble).toList(), true);
     }
 
     protected static float getClosestMarbleInFront(Marble startingMarble, List<Marble> flattenedBoard, List<Marble> matching) {
@@ -171,8 +173,21 @@ public class DeciderService {
             .orElse(-1f);
     }
 
-    protected static Marble evaluate(float[] inputs, Genome player, List<Marble> canMove) {
+    protected static Marble evaluate(float[] inputs, Genome player, List<Marble> canMove, boolean onlyTakeTopMove) {
         float[] outputs = player.evaluateNetwork(inputs);
+        if (onlyTakeTopMove) {
+            Map<Integer, Marble> moveMap = canMove.stream()
+                .collect(Collectors.toMap(Marble::identifier, Function.identity()));
+            Integer identifier = null;
+            Float max = null;
+            for (int i = 0; i < outputs.length; i++) {
+                if (max == null || outputs[i] > max) {
+                    max = outputs[i];
+                    identifier = i;
+                }
+            }
+            return moveMap.get(identifier);
+        }
         Map<Marble, Float> possible = new HashMap<>();
         canMove
             .stream()

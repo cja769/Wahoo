@@ -5,6 +5,7 @@ import com.jay.wahoo.Player.PlayerState;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.service.DeciderService;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -115,7 +116,12 @@ public class Game {
                 } else {
                     if (!movableMarbles.isEmpty()) {
                         Marble marbleToMove = chooseMarbleToMove(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount);
-                        gameBoard.move(marbleToMove, diceRoll);
+                        if (marbleToMove != null) {
+                            gameBoard.move(marbleToMove, diceRoll);
+                            currentPlayer.genome().setFitness(currentPlayer.genome().getFitness() + .1f);
+                        } else {
+                            currentPlayer.genome().setFitness(currentPlayer.genome().getFitness() - .2f);
+                        }
                     }
                     incrementTurn();
                 }
@@ -170,13 +176,30 @@ public class Game {
     }
 
     public boolean isGameComplete() {
-        return currentPlayer != null && currentPlayer.safeBoard().isComplete() && currentPlayer.partner().safeBoard().isComplete();
+        return (currentPlayer != null && currentPlayer.safeBoard().isComplete() && currentPlayer.partner().safeBoard().isComplete()) || !winnersByTooManyInvalidMoves().isEmpty();
+    }
+
+    private List<Player> winnersByTooManyInvalidMoves() {
+        if (Arrays.stream(players).anyMatch(Player::isHuman)) {
+            return List.of();
+        }
+        List<Player> aboveWaterPlayers = Arrays.stream(players)
+            .filter(p -> p.genome().getFitness() > 0f)
+            .toList();
+        if (aboveWaterPlayers.size() == 1) {
+            return List.of(aboveWaterPlayers.get(0), aboveWaterPlayers.get(0).partner());
+        }
+        return List.of();
     }
 
     public List<Player> getWinningTeam() {
-        return Arrays.stream(players)
+        List<Player> winnersTheRealWay = Arrays.stream(players)
             .filter(p -> p.safeBoard().isComplete() && p.partner().safeBoard().isComplete())
             .toList();
+        if (!winnersTheRealWay.isEmpty()) {
+            return winnersTheRealWay;
+        }
+        return winnersByTooManyInvalidMoves();
     }
 
     public List<Genome> play() {
@@ -185,7 +208,7 @@ public class Game {
             System.out.println("Players " + currentPlayer.identifier() + " and " + currentPlayer.partner().identifier() + " have won");
             printGameBoard(turns/4);
         }
-        return List.of(currentPlayer.genome(), currentPlayer.partner().genome());
+        return getWinningTeam().stream().map(Player::genome).toList();
     }
 
     protected void printGameBoard(int turn) {

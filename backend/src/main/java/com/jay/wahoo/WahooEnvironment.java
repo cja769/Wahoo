@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class WahooEnvironment implements Environment {
@@ -69,6 +70,8 @@ public class WahooEnvironment implements Environment {
             int rounds = 20;
             int maxGames = rounds * 3;
             boolean shouldBreak = false;
+            Map<Genome, Float> playerFitness = players.stream()
+                .collect(Collectors.toMap(Function.identity(), Genome::getFitness));
             for (int round = 0; round < rounds && !shouldBreak; round++) {
                 for (int i = 1; i < 4 && !shouldBreak; i++) {
                     currentGame.add(players.get(0));
@@ -90,8 +93,14 @@ public class WahooEnvironment implements Environment {
                     });
                     shouldBreak = shouldShortCircuit(round, 3, i, maxGames, winnerMap.values());
                     currentGame = new ArrayList<>();
+                    players.forEach(p -> {
+                        p.setFitness(playerFitness.get(p));
+                    });
                 }
             }
+            players.forEach(p -> {
+                p.setFitness(playerFitness.get(p));
+            });
             List<Genome> winners = winnerMap.entrySet().stream()
                 .sorted(Entry.comparingByValue(Comparator.reverseOrder()))
                 .limit(numWinnersToReturn)
