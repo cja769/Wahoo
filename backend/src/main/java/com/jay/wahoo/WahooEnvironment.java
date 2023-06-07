@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class WahooEnvironment implements Environment {
     @Override
     public void evaluateFitness(ArrayList<Genome> population) {
+        Collections.shuffle(population);
         start(Mono.just(population))
             .map(remaining -> {
                 remaining.forEach(g -> g.setFitness(g.getFitness() + g.getFitness()));
