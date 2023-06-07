@@ -67,6 +67,7 @@ public class WahooEnvironment implements Environment {
         return Mono.defer(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
+            players.forEach(g -> winnerMap.put(g, 0));
             int rounds = 20;
             int maxGames = rounds * 3;
             boolean shouldBreak = false;
@@ -81,16 +82,17 @@ public class WahooEnvironment implements Environment {
                             currentGame.add(players.get(j));
                         }
                     }
-                    List<Genome> winners = new Game(currentGame, false).play();
-                    winners.forEach(w -> {
-                        Integer wins = winnerMap.get(w);
-                        if (wins == null) {
-                            wins = 1;
-                        } else {
-                            wins++;
-                        }
-                        winnerMap.put(w, wins);
-                    });
+                    new Game(currentGame, false).play().stream()
+                        .filter(g -> g.getFitness() > 0)
+                        .forEach(w -> {
+                            Integer wins = winnerMap.get(w);
+                            if (wins == null) {
+                                wins = 1;
+                            } else {
+                                wins++;
+                            }
+                            winnerMap.put(w, wins);
+                        });
                     shouldBreak = shouldShortCircuit(round, 3, i, maxGames, winnerMap.values());
                     currentGame = new ArrayList<>();
                     players.forEach(p -> {
@@ -116,10 +118,9 @@ public class WahooEnvironment implements Environment {
         Integer maxWins = wins.stream()
             .max(Integer::compareTo)
             .orElse(0);
-        int possibleWinners = wins.stream()
+        long possibleWinners = wins.stream()
             .filter(numWins -> (numWins + remainingGames) >= maxWins)
-            .toList()
-            .size();
+            .count();
         return possibleWinners == 1;
     }
 }
