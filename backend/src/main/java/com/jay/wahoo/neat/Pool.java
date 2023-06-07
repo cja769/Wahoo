@@ -136,6 +136,8 @@ public class Pool {
 
             if(s.getStaleness()< NEAT_Config.STALE_SPECIES || s.getTopFitness()>= this.getTopFitness()){
                 survived.add(s);
+            } else {
+                log.info("Species was removed because of staleness");
             }
         }
 
@@ -147,6 +149,7 @@ public class Pool {
             survived = new ArrayList<>();
             survived.add(newBase);
             poolStale = true;
+            log.info("All but best species purged from pool staleness");
         }
 
         species = survived;
