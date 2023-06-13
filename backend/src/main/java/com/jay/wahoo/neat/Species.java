@@ -14,15 +14,10 @@ import java.util.Random;
 public class Species implements Comparable{
     private ArrayList<Genome> genomes = new ArrayList<>();
     private float topFitness = 0;
-    private int staleness =0;
-    Random rand = new Random();
+    private int staleness = 0;
 
     public Species() {
         super();
-    }
-
-    public Species(Genome top){
-        this.genomes.add(top);
     }
 
     public void calculateGenomeAdjustedFitness(){
@@ -55,7 +50,7 @@ public class Species implements Comparable{
 
     @JsonIgnore
     public Genome breedChild(){
-        Genome child = genomes.get(rand.nextInt(genomes.size()));
+        Genome child = getTopGenome();
         child = new Genome(child);
         child.mutate();
         return child;
@@ -66,8 +61,6 @@ public class Species implements Comparable{
     }
 
     public float getTopFitness() {
-        topFitness = getTopGenome().getFitness();
-        topFitness = getTopGenome().getFitness();
         return topFitness;
     }
 

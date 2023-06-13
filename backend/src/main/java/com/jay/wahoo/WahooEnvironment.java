@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class WahooEnvironment implements Environment {
     @Override
     public void evaluateFitness(ArrayList<Genome> population) {
+        population.forEach(g -> g.setFitness(0));
         Collections.shuffle(population);
         start(Mono.just(population))
             .map(remaining -> {
@@ -41,7 +42,6 @@ public class WahooEnvironment implements Environment {
     protected Mono<List<Genome>> playRound(List<Genome> population, int numWinnersToReturn) {
         List<Genome> players = new ArrayList<>();
         List<Mono<List<Genome>>> inProgress = new ArrayList<>();
-        population.forEach(g -> g.setFitness(0));
         for (int i = 0; i < population.size(); i++) {
             if (players.size() == 4) {
                 inProgress.add(playMatch(players, numWinnersToReturn));
@@ -101,6 +101,7 @@ public class WahooEnvironment implements Environment {
                     });
                 }
             }
+
             players.forEach(p -> {
                 p.setFitness(playerFitness.get(p));
             });

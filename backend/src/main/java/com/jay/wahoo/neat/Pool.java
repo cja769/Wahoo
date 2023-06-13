@@ -18,8 +18,7 @@ public class Pool {
 
     private ArrayList<Species> species = new ArrayList<>();
     private int generations = 0;
-    private float topFitness ;
-    private int poolStaleness = 0;
+    private float topFitness;
     private boolean freshPool = true;
 
 
@@ -115,26 +114,19 @@ public class Pool {
         return total;
     }
 
-    public boolean removeStaleSpecies(){
+    public void removeStaleSpecies(){
         ArrayList<Species> survived = new ArrayList<>();
-
-        if(topFitness<getTopFitness()){
-            poolStaleness = 0;
-            topFitness = getTopFitness();
-        }
-
 
         for(Species s: species){
             Genome top  = s.getTopGenome();
-            if(top.getFitness()>s.getTopFitness()){
+            if(top.getFitness() > s.getTopFitness() || top.getFitness() >= getTopFitness()) {
                 s.setTopFitness(top.getFitness());
                 s.setStaleness(0);
-            }
-            else{
+            } else{
                 s.setStaleness(s.getStaleness()+1);     // increment staleness
             }
 
-            if(s.getStaleness()< NEAT_Config.STALE_SPECIES || s.getTopFitness()>= this.getTopFitness()){
+            if (s.getStaleness() < NEAT_Config.STALE_SPECIES) {
                 survived.add(s);
             } else {
                 log.info("Species was removed because of staleness");
@@ -142,27 +134,25 @@ public class Pool {
         }
 
         Collections.sort(survived,Collections.reverseOrder());
-
-        boolean poolStale = false;
-        if(poolStaleness>NEAT_Config.STALE_POOL){
-            Species newBase = survived.get(0);
-            survived = new ArrayList<>();
-            survived.add(newBase);
-            poolStale = true;
-            log.info("All but best species purged from pool staleness");
-        }
-
         species = survived;
-        poolStaleness++;
-        return poolStale;
     }
 
-    protected void removeUnderperformingGenomes() {
+    protected void removeUnderperformingGenomes(boolean keepOnlyBest) {
         for (Species s : species) {
-            int keep = (int) (s.getGenomes().size() * NEAT_Config.SURVIVAL_RATE);
-            s.getGenomes().removeAll(s.getGenomes().stream()
+            int keep = keepOnlyBest ? 1 : (int) (s.getGenomes().size() * NEAT_Config.SURVIVAL_RATE);
+            List<Genome> genomesToRemove = s.getGenomes().stream()
                 .skip(keep)
-                .toList());
+                .toList();
+            if (genomesToRemove.isEmpty()) {
+                throw new IllegalArgumentException("Somehow we're not removing any genomes");
+            }
+            if (genomesToRemove.size() == s.getGenomes().size()) {
+                throw new IllegalArgumentException("Somehow we're about to remove everything from a species");
+            }
+            if (genomesToRemove.size() != s.getGenomes().size() - keep) {
+                throw new IllegalArgumentException("Somehow we're not removing the correct amount of genomes");
+            }
+            s.getGenomes().removeAll(genomesToRemove);
         }
     }
 
@@ -177,13 +167,12 @@ public class Pool {
         calculateGenomeAdjustedFitness();
         ArrayList<Species> survived = new ArrayList<>();
         removeStaleSpecies();
-        removeUnderperformingGenomes();
+        removeUnderperformingGenomes(true);
         for (int index = 0; index < getNumberOfSpecies(); index++) {
             Species s = species.get(index);
-            Species newSpecies = new Species(s.getTopGenome());
-            survived.add(newSpecies);
+            survived.add(s);
             for (int i = 1; i < getSizeOfSpecies(); i++) {
-                newSpecies.getGenomes().add(s.breedChild());
+                s.getGenomes().add(s.breedChild());
             }
         }
         List<Species> newSpecies = new ArrayList<>();
@@ -207,7 +196,7 @@ public class Pool {
     @JsonIgnore
     public float getTopFitness(){
         float topFitness = 0;
-        Genome topGenome =null;
+        Genome topGenome = null;
         for(Species s : species){
             topGenome = s.getTopGenome();
             if(topGenome.getFitness()>topFitness){
