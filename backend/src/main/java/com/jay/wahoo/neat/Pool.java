@@ -168,7 +168,7 @@ public class Pool {
         ArrayList<Species> survived = new ArrayList<>();
         removeStaleSpecies();
         removeUnderperformingGenomes(true);
-        for (int index = 0; index < getNumberOfSpecies(); index++) {
+        for (int index = 0; index < species.size(); index++) {
             Species s = species.get(index);
             survived.add(s);
             for (int i = 1; i < getSizeOfSpecies(); i++) {
