@@ -21,9 +21,10 @@ public class DeciderService {
      * @param diceRoll The dice roll
      * @param numSixes The number of sixes
      * @param players All of the players
+     * @param training If this is for training
      * @return The marble to move
      */
-    public static Marble decide(Player playingAs, Genome actualPlayer, List<TestMove> unsortedMoves, int diceRoll, int numSixes, Player[] players) {
+    public static Marble decide(Player playingAs, Genome actualPlayer, List<TestMove> unsortedMoves, int diceRoll, int numSixes, Player[] players, boolean training) {
         List<TestMove> moves = unsortedMoves.stream()
             .sorted(Comparator.comparing(a -> a.marble.identifier()))
             .toList();
@@ -142,7 +143,7 @@ public class DeciderService {
         // Was roll a six (97)
         inputs[inputIndex] = diceRoll == 6 ? 1 : -1;
         // Bias (98) (added elsewhere)
-        return evaluate(inputs, actualPlayer, moves.stream().filter(m -> m.isMovable).map(m -> m.marble).toList(), true);
+        return evaluate(inputs, actualPlayer, moves.stream().filter(m -> m.isMovable).map(m -> m.marble).toList(), training);
     }
 
     protected static float getClosestMarbleInFront(Marble startingMarble, List<Marble> flattenedBoard, List<Marble> matching) {

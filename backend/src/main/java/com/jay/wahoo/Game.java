@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class Game {
 
     private GameBoard gameBoard;
@@ -27,16 +28,20 @@ public class Game {
     public LocalDateTime lastUpdated;
     public List<Marble> movableMarbles = new ArrayList<>();
     public boolean rolledThreeSixes;
+    private boolean training;
+    private final Integer maxTurns;
 
-    public Game(List<Genome> genomes, boolean verbose) {
+    public Game(List<Genome> genomes, boolean verbose, Integer maxTurns) {
         assert genomes.size() == 4;
+        this.maxTurns = maxTurns;
+        this.training = true;
         this.verbose = verbose;
         this.identifier = UUID.randomUUID().toString();
         this.players = new Player[4];
         Player lastPlayer = null;
         Player firstPlayer = null;
         for (int i = 0; i < 4; i++) {
-            Player thisPlayer = new Player(genomes.get(i), i, "CPU " + (i+1));
+            Player thisPlayer = new Player(genomes.get(i), i, "CPU " + (i + 1));
             players[i] = thisPlayer;
             if (firstPlayer == null) {
                 firstPlayer = thisPlayer;
@@ -56,6 +61,10 @@ public class Game {
         this.lastUpdated = LocalDateTime.now();
     }
 
+    public Game(List<Genome> genomes, boolean verbose) {
+        this(genomes, verbose, null);
+    }
+
     public boolean isJoinable() {
         return !gameStarted;
     }
@@ -69,6 +78,10 @@ public class Game {
             throw new IllegalArgumentException("Can't join as player " + playerIdentifier + " because that's already a human");
         }
         matched.makeHuman(name);
+        if (!name.equalsIgnoreCase("train")) {
+            this.training = false;
+            this.verbose = true;
+        }
         lastUpdated = LocalDateTime.now();
     }
 
@@ -102,9 +115,6 @@ public class Game {
             currentPlayer = players[playerPos];
             diceRoll = rollDie();
             if (diceRoll == 6 && sixCount + 1 >= 3) {
-                if (verbose) {
-                    System.out.println("Player " + currentPlayer.identifier() + " rolled 3 sixes");
-                }
                 gameBoard.resetFurthestMarble(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
                 sixCount = 0;
                 rolledThreeSixes = true;
@@ -115,12 +125,12 @@ public class Game {
                     awaitingHumanMove = true;
                 } else {
                     if (!movableMarbles.isEmpty()) {
-                        Marble marbleToMove = chooseMarbleToMove(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount);
+                        Marble marbleToMove = DeciderService.decide(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount, players, training);
                         if (marbleToMove != null) {
                             gameBoard.move(marbleToMove, diceRoll);
-                            currentPlayer.genome().setFitness(currentPlayer.genome().getFitness() + .1f);
+                            currentPlayer.addCorrectMove();
                         } else {
-                            currentPlayer.genome().setFitness(currentPlayer.genome().getFitness() - .4f);
+                            currentPlayer.addIncorrectMove();
                         }
                     }
                     incrementTurn();
@@ -151,9 +161,6 @@ public class Game {
             sixCount = 0;
             playerPos++;
             turns++;
-            if (turns % 4 == 0 && verbose) {
-                printGameBoard(turns/4);
-            }
         }
     }
 
@@ -176,61 +183,43 @@ public class Game {
     }
 
     public boolean isGameComplete() {
-        return (currentPlayer != null && currentPlayer.safeBoard().isComplete() && currentPlayer.partner().safeBoard().isComplete()) || !winnersByTooManyInvalidMoves().isEmpty();
+        if (turns >= maxTurns) {
+            return true;
+        }
+        return currentPlayer != null && currentPlayer.safeBoard().isComplete() && currentPlayer.partner().safeBoard().isComplete();
     }
 
-    private List<Player> winnersByTooManyInvalidMoves() {
-        if (Arrays.stream(players).anyMatch(Player::isHuman)) {
-            return List.of();
-        }
-        List<Player> aboveWaterPlayers = Arrays.stream(players)
-            .filter(p -> p.genome().getFitness() > 0f)
+    private List<Player> getTopCorrectMovePercentagePlayers() {
+        return Arrays.stream(players)
+            .sorted((a, b) -> b.getCorrectMovePercentage().compareTo(a.getCorrectMovePercentage()))
+            .limit(2)
             .toList();
-        if (aboveWaterPlayers.size() == 1) {
-            return List.of(aboveWaterPlayers.get(0), aboveWaterPlayers.get(0).partner());
-        }
-        return List.of();
     }
 
     public List<Player> getWinningTeam() {
-        List<Player> winnersTheRealWay = Arrays.stream(players)
+        List<Player> winners = Arrays.stream(players)
             .filter(p -> p.safeBoard().isComplete() && p.partner().safeBoard().isComplete())
             .toList();
-        if (!winnersTheRealWay.isEmpty()) {
-            return winnersTheRealWay;
+        if (verbose) {
+            Arrays.stream(players)
+                .filter(p -> !p.isHuman())
+                .sorted((a, b) -> b.getCorrectMovePercentage().compareTo(a.getCorrectMovePercentage()))
+                .forEach(p -> {
+                    log.info("Player " + p.getName() + " : Correct moves " + p.getCorrectMoves() + "; Incorrect moves " + p.getIncorrectMoves() + "; Correct move percentage " + p.getCorrectMovePercentage());
+                });
+            log.info("It took " + turns + " turns to finish the game\n");
         }
-        return winnersByTooManyInvalidMoves();
+        boolean winnersMadeAllCorrectMoves = winners.stream()
+            .allMatch(p -> p.getCorrectMovePercentage().equals(1.0));
+        if (!winners.isEmpty() && (winnersMadeAllCorrectMoves || !training)) {
+            return winners;
+        }
+        return getTopCorrectMovePercentagePlayers();
     }
 
     public List<Genome> play() {
-        while (!next().gameComplete);
-        if (verbose) {
-            System.out.println("Players " + currentPlayer.identifier() + " and " + currentPlayer.partner().identifier() + " have won");
-            printGameBoard(turns/4);
-        }
+        while (!next().gameComplete) ;
         return getWinningTeam().stream().map(Player::genome).toList();
-    }
-
-    protected void printGameBoard(int turn) {
-        System.out.println("After " + turn + " turns");
-        for (Player player : players) {
-            System.out.println("Player " + player.identifier() + " area");
-            printBoard(player.safeBoard());
-            printBoard(player.playerBoard());
-            printBoard(player.startBoard());
-            System.out.println();
-        }
-        System.out.println("----------------------------------");
-    }
-
-    protected void printBoard(ContainingBoard b) {
-        System.out.println(Arrays.stream(b.getArea())
-            .map(m -> m == null ? "0" : m.player().identifier() + "" + m.identifier())
-            .collect(Collectors.joining(" ")));
-    }
-
-    protected Marble chooseMarbleToMove(Player playingAs, Genome playing, List<TestMove> moves, int diceRoll, int numSixes) {
-        return DeciderService.decide(playingAs, playing, moves, diceRoll, numSixes, players);
     }
 
     protected int rollDie() {
@@ -263,7 +252,7 @@ public class Game {
             this.rolledThreeSixes = game.rolledThreeSixes;
         }
 
-        public GameState (Game game, String winningPlayerId, GameEndReason reason) {
+        public GameState(Game game, String winningPlayerId, GameEndReason reason) {
             this(game);
             this.endReason = reason;
             Player player = Arrays.stream(game.players)

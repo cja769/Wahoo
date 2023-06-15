@@ -17,13 +17,16 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class WahooEnvironment implements Environment {
+
+    private final Integer maxTurns = 500;
+
     @Override
     public void evaluateFitness(ArrayList<Genome> population) {
         population.forEach(g -> g.setFitness(0));
         Collections.shuffle(population);
         start(Mono.just(population))
             .map(remaining -> {
-                remaining.forEach(g -> g.setFitness(g.getFitness() + g.getFitness()));
+                remaining.forEach(g -> g.setFitness(g.getFitness() + 10));
                 return remaining;
             }).block();
     }
@@ -33,30 +36,31 @@ public class WahooEnvironment implements Environment {
             .flatMap(pop -> {
                 log.info("Population size is " + pop.size());
                 if (pop.size() >= 4) {
-                    return start(playRound(pop, pop.size() == 4 ? 1 : 2));
+                    boolean lastGame = pop.size() == 4;
+                    return start(playRound(pop, lastGame ? 1 : 2, lastGame));
                 }
                 return Mono.just(pop);
             });
     }
 
-    protected Mono<List<Genome>> playRound(List<Genome> population, int numWinnersToReturn) {
+    protected Mono<List<Genome>> playRound(List<Genome> population, int numWinnersToReturn, boolean verbose) {
         List<Genome> players = new ArrayList<>();
         List<Mono<List<Genome>>> inProgress = new ArrayList<>();
         for (int i = 0; i < population.size(); i++) {
             if (players.size() == 4) {
-                inProgress.add(playMatch(players, numWinnersToReturn));
+                inProgress.add(playMatch(players, numWinnersToReturn, verbose));
                 players = new ArrayList<>();
             }
             Genome player = population.get(i);
             if (player.getFitness() == 0) {
                 player.setFitness(10);
             } else {
-                player.setFitness(player.getFitness() + player.getFitness());
+                player.setFitness(player.getFitness() + 10);
             }
             players.add(player);
         }
         if (players.size() == 4) {
-            inProgress.add(playMatch(players, numWinnersToReturn));
+            inProgress.add(playMatch(players, numWinnersToReturn, verbose));
         }
         return Flux.fromIterable(inProgress)
             .flatMap(Function.identity(), 2)
@@ -64,7 +68,7 @@ public class WahooEnvironment implements Environment {
             .collectList();
     }
 
-    protected Mono<List<Genome>> playMatch(List<Genome> players, int numWinnersToReturn) {
+    protected Mono<List<Genome>> playMatch(List<Genome> players, int numWinnersToReturn, boolean verbose) {
         return Mono.defer(() -> {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
@@ -72,11 +76,6 @@ public class WahooEnvironment implements Environment {
             int rounds = 20;
             int maxGames = rounds * 3;
             boolean shouldBreak = false;
-            Map<Genome, Float> playerFitness = players.stream()
-                .collect(Collectors.toMap(Function.identity(), Genome::getFitness));
-            players.forEach(p -> {
-                p.setFitness(10);
-            });
             for (int round = 0; round < rounds && !shouldBreak; round++) {
                 for (int i = 1; i < 4 && !shouldBreak; i++) {
                     currentGame.add(players.get(0));
@@ -86,8 +85,7 @@ public class WahooEnvironment implements Environment {
                             currentGame.add(players.get(j));
                         }
                     }
-                    new Game(currentGame, false).play().stream()
-                        .filter(g -> g.getFitness() > 0)
+                    new Game(currentGame, verbose, maxTurns).play().stream()
                         .forEach(w -> {
                             Integer wins = winnerMap.get(w);
                             if (wins == null) {
@@ -99,20 +97,18 @@ public class WahooEnvironment implements Environment {
                         });
                     shouldBreak = shouldShortCircuit(round, 3, i, maxGames, winnerMap.values());
                     currentGame = new ArrayList<>();
-                    players.forEach(p -> {
-                        p.setFitness(10);
-                    });
                 }
             }
-            players.forEach(p -> {
-                p.setFitness(playerFitness.get(p));
-            });
-            List<Genome> winners = winnerMap.entrySet().stream()
+            List<Genome> sorted = winnerMap.entrySet().stream()
                 .sorted(Entry.comparingByValue(Comparator.reverseOrder()))
-                .limit(numWinnersToReturn)
                 .map(Entry::getKey)
                 .toList();
-            return Mono.just(winners);
+            int j = sorted.size() - 1;
+            for (int i = 0; i < sorted.size(); i++) {
+                sorted.get(i).setFitness(sorted.get(i).getFitness() + j);
+                j--;
+            }
+            return Mono.just(sorted.stream().limit(numWinnersToReturn).toList());
         }).subscribeOn(Schedulers.boundedElastic());
     }
 

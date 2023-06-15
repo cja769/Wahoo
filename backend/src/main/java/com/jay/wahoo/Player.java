@@ -1,6 +1,7 @@
 package com.jay.wahoo;
 
 import com.jay.wahoo.neat.Genome;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,10 @@ public class Player {
     private Genome genome;
     private Genome originalGenome;
     private String originalName;
+    @Getter
+    private int correctMoves;
+    @Getter
+    private int incorrectMoves;
 
     public Player(Genome genome, Integer identifier, String name) {
         this.genome = genome;
@@ -34,6 +39,18 @@ public class Player {
             marbles.add(marble);
             startBoard.addToBoard(marble);
         }
+    }
+
+    public void addCorrectMove() {
+        correctMoves++;
+    }
+
+    public void addIncorrectMove() {
+        incorrectMoves++;
+    }
+
+    public Double getCorrectMovePercentage() {
+        return correctMoves / (correctMoves + incorrectMoves + .0);
     }
 
     public void makeHuman(String name) {
