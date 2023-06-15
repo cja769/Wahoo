@@ -78,9 +78,9 @@ public class Game {
             throw new IllegalArgumentException("Can't join as player " + playerIdentifier + " because that's already a human");
         }
         matched.makeHuman(name);
-        if (!name.equalsIgnoreCase("train")) {
-            this.training = false;
+        if (name.equalsIgnoreCase("train")) {
             this.verbose = true;
+            this.training = true;
         }
         lastUpdated = LocalDateTime.now();
     }
@@ -94,6 +94,12 @@ public class Game {
             throw new IllegalArgumentException("Can't join as player " + playerId + " because that's already a human");
         }
         matched.makeBot();
+        boolean resetSettings = Arrays.stream(players)
+            .noneMatch(p -> p.getName().equalsIgnoreCase("train"));
+        if (resetSettings) {
+            this.verbose = false;
+            this.training = false;
+        }
         lastUpdated = LocalDateTime.now();
     }
 
@@ -190,7 +196,12 @@ public class Game {
     }
 
     private List<Player> getTopCorrectMovePercentagePlayers() {
+        return getPlayersSortedByMovePercentage().stream().limit(2).toList();
+    }
+
+    private List<Player> getPlayersSortedByMovePercentage() {
         return Arrays.stream(players)
+            .filter(p -> !p.isHuman())
             .sorted((a, b) -> {
                 int compare = b.getCorrectMovePercentage().compareTo(a.getCorrectMovePercentage());
                 if (compare == 0) {
@@ -198,7 +209,6 @@ public class Game {
                 }
                 return compare;
             })
-            .limit(2)
             .toList();
     }
 
@@ -207,9 +217,7 @@ public class Game {
             .filter(p -> p.safeBoard().isComplete() && p.partner().safeBoard().isComplete())
             .toList();
         if (verbose) {
-            Arrays.stream(players)
-                .filter(p -> !p.isHuman())
-                .sorted((a, b) -> b.getCorrectMovePercentage().compareTo(a.getCorrectMovePercentage()))
+            getPlayersSortedByMovePercentage()
                 .forEach(p -> {
                     log.info("Player " + p.getName() + " : Correct moves " + p.getCorrectMoves() + "; Incorrect moves " + p.getIncorrectMoves() + "; Correct move percentage " + p.getCorrectMovePercentage());
                 });
