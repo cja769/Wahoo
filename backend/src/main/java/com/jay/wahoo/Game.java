@@ -191,7 +191,13 @@ public class Game {
 
     private List<Player> getTopCorrectMovePercentagePlayers() {
         return Arrays.stream(players)
-            .sorted((a, b) -> b.getCorrectMovePercentage().compareTo(a.getCorrectMovePercentage()))
+            .sorted((a, b) -> {
+                int compare = b.getCorrectMovePercentage().compareTo(a.getCorrectMovePercentage());
+                if (compare == 0) {
+                    return Integer.compare(b.getCorrectMoves(), a.getCorrectMoves());
+                }
+                return compare;
+            })
             .limit(2)
             .toList();
     }
