@@ -120,7 +120,7 @@ public class Game {
                             gameBoard.move(marbleToMove, diceRoll);
                             currentPlayer.genome().setFitness(currentPlayer.genome().getFitness() + .1f);
                         } else {
-                            currentPlayer.genome().setFitness(currentPlayer.genome().getFitness() - .2f);
+                            currentPlayer.genome().setFitness(currentPlayer.genome().getFitness() - .4f);
                         }
                     }
                     incrementTurn();

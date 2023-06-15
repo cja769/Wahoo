@@ -74,6 +74,9 @@ public class WahooEnvironment implements Environment {
             boolean shouldBreak = false;
             Map<Genome, Float> playerFitness = players.stream()
                 .collect(Collectors.toMap(Function.identity(), Genome::getFitness));
+            players.forEach(p -> {
+                p.setFitness(10);
+            });
             for (int round = 0; round < rounds && !shouldBreak; round++) {
                 for (int i = 1; i < 4 && !shouldBreak; i++) {
                     currentGame.add(players.get(0));
@@ -97,11 +100,10 @@ public class WahooEnvironment implements Environment {
                     shouldBreak = shouldShortCircuit(round, 3, i, maxGames, winnerMap.values());
                     currentGame = new ArrayList<>();
                     players.forEach(p -> {
-                        p.setFitness(playerFitness.get(p));
+                        p.setFitness(10);
                     });
                 }
             }
-
             players.forEach(p -> {
                 p.setFitness(playerFitness.get(p));
             });
