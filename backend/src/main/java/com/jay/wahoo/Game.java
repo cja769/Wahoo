@@ -183,7 +183,7 @@ public class Game {
     }
 
     public boolean isGameComplete() {
-        if (turns >= maxTurns) {
+        if (maxTurns != null && turns >= maxTurns) {
             return true;
         }
         return currentPlayer != null && currentPlayer.safeBoard().isComplete() && currentPlayer.partner().safeBoard().isComplete();
