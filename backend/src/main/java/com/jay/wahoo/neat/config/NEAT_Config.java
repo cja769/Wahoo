@@ -28,7 +28,7 @@ public class NEAT_Config {
     public static final float DISABLE_MUTATION_CHANCE = 0.1f;
     public static final float ENABLE_MUTATION_CHANCE = 0.2f ;
     public static final float CROSSOVER_CHANCE = 0.75f;
-    public static final float SURVIVAL_RATE = 0.5f;
+    public static final float SURVIVAL_RATE = 0.25f;
 
     public static final int STALE_POOL = 20 ;
 }

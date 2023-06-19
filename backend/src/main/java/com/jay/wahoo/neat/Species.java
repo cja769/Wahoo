@@ -50,7 +50,8 @@ public class Species implements Comparable{
 
     @JsonIgnore
     public Genome breedChild(){
-        Genome child = getTopGenome();
+        int index = new Random().nextInt(getGenomes().size());
+        Genome child = getGenomes().get(index);
         child = new Genome(child);
         child.mutate();
         return child;
