@@ -73,7 +73,7 @@ public class WahooEnvironment implements Environment {
             List<Genome> currentGame = new ArrayList<>();
             Map<Genome, Integer> winnerMap = new HashMap<>();
             players.forEach(g -> winnerMap.put(g, 0));
-            int rounds = 20;
+            int rounds = 30;
             int maxGames = rounds * 3;
             boolean shouldBreak = false;
             for (int round = 0; round < rounds && !shouldBreak; round++) {
