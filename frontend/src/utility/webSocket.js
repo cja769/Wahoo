@@ -5,6 +5,10 @@ import getBackendUrl from "./constants";
 export function initSocket(topic, callback) {
     const socket = new SockJS(getBackendUrl() + '/ws');
     const stompClient = Stomp.over(socket);
-    stompClient.connect({}, () => stompClient.subscribe(topic, callback));
+    stompClient.connect({}, () => stompClient.subscribe(topic, callback), () => {
+        setTimeout(() => {
+            initSocket(topic, callback);
+        }, 1000);
+    });
     return stompClient;
 };
