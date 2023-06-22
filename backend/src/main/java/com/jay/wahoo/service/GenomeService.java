@@ -28,12 +28,6 @@ public class GenomeService {
         for (int i = 0; i <= NEAT_Config.INPUTS; i++) {
             inputNodes.add(getNextLevel(connectionMap.getOrDefault(i, List.of()), i, connectionMap));
         }
-        Map<Integer, List<Node>> nodeMap = inputNodes.stream()
-            .flatMap(n -> n.connections.stream().map(c -> c.outNode))
-            .collect(Collectors.groupingBy(n -> n.nodeId));
-        inputNodes.stream()
-            .flatMap(n -> n.connections.stream())
-            .forEach(conn -> conn.outNode = nodeMap.get(conn.outNode.nodeId).get(0));
         pruneNetwork(inputNodes);
         return new Network(inputNodes);
     }
@@ -43,23 +37,29 @@ public class GenomeService {
     }
 
     private void pruneNetwork(Node node) {
-        List<Connection> connections = node.connections.stream()
-            .filter(c -> !shouldRemoveConnection(c))
+        if (!node.connections.isEmpty()) {
+            node.connections.forEach(c -> pruneNetwork(c.outNode));
+        }
+        node.connections = node.connections.stream()
+            .filter(this::shouldKeepConnection)
             .toList();
-        connections
-            .forEach(c -> pruneNetwork(c.outNode));
-        node.connections = connections;
     }
 
-    private boolean shouldRemoveNode(Node node) {
-        return !alwaysKeep(node) && (node.connections.isEmpty() || node.connections.stream().anyMatch(c -> !shouldRemoveConnection(c)));
+    private boolean shouldKeepConnection(Connection connection) {
+        return shouldKeepNode(connection.outNode);
     }
 
-    private boolean shouldRemoveConnection(Connection connection) {
-        return shouldRemoveNode(connection.outNode);
+    private boolean shouldKeepNode(Node node) {
+        if (isInputOrOutput(node)) {
+            return true;
+        }
+        if (node.connections.isEmpty()) {
+            return false;
+        }
+        return node.connections.stream().allMatch(this::shouldKeepConnection);
     }
 
-    private boolean alwaysKeep(Node node) {
+    private boolean isInputOrOutput(Node node) {
         return node.nodeId <= LAST_INPUT_NODE || node.nodeId >= FIRST_OUTPUT_NODE;
     }
 
