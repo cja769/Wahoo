@@ -77,7 +77,7 @@ public class PoolService {
             writer.write(serialized);
         }
         List<Genome> genomes = pool.getSpecies().stream()
-            .map(s -> s.getTopGenome())
+            .map(Species::getTopGenome)
             .sorted(Comparator.reverseOrder())
             .limit(4)
             .toList();

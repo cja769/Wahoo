@@ -23,22 +23,41 @@ const Board = (props) => {
         awaitingHumanMove: false,
         gameId: "",
         hasStarted : false,
-        rolledThreeSixes : false
+        rolledThreeSixes : false,
+        diceRollUpdated : false
     };
     const [boardState, setBoardStateInternal] = useState(defaultBoardState)
     const [diceRoll, setDiceRoll] = useState(0);
     const [socketClient, setSocketClient] = useState();
 
     const setBoardState = val => {
+        const updateDiceRoll = (roll, count) => {
+            if (count === 0) {
+                setDiceRoll(roll);
+                return;
+            }
+            setTimeout(() => {
+                let randomRoll = diceRoll;
+                while (randomRoll === diceRoll) {
+                    randomRoll = Math.floor(Math.random() * 6) + 1;
+                }
+                setDiceRoll(randomRoll);
+                updateDiceRoll(roll, count - 1);
+            }, 75)
+        }
         setBoardStateInternal(val);
-        setDiceRoll(val.currentRoll);
+        if (boardState.currentRoll === 0) {
+            setDiceRoll(val.currentRoll);
+        }
+        if (val.diceRollUpdated === true) {
+            updateDiceRoll(val.currentRoll, 5);
+        }
         if (val.rolledThreeSixes === true) {
             setErrorMessage("Player " + val.currentPlayerName + " rolled three sixes!");
             setTimeout(() => {
                 setErrorMessage(null);
             }, 3000)
         }
-
     }
 
     useEffect(() => {

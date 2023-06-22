@@ -1,6 +1,7 @@
 import React from "react";
+import {playerColorMap} from "../../utility/constants";
 
-function Die2() {
+function Die2(props) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 36 36">
             <g
@@ -10,7 +11,8 @@ function Die2() {
                 transform="translate(-4.5 -966.86)"
             >
                 <path
-                    fill="white"
+                    fill={playerColorMap[props.playerId]}
+                    fillOpacity=".25"
                     d="M5 5H40V40H5z"
                     transform="translate(0 962.36)"
                 ></path>

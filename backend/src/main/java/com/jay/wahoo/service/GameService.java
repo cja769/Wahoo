@@ -65,7 +65,7 @@ public class GameService {
     }
 
     public Game createGame() throws IOException {
-        Game game = new Game(poolService.getPlayersFromPool(), false);
+        Game game = new Game(poolService.getPlayersFromPool());
         gameMap.put(game.identifier, game);
         sendGameStateUpdate(game);
         return game;
@@ -101,7 +101,13 @@ public class GameService {
                 } else {
                     sendGameStateUpdate(state);
                     if (!game.awaitingHumanMove) {
-                        sleep();
+                        if (game.awaitingComputerMove) {
+                            sleep(600);
+                            sendGameStateUpdate(game.moveComputer());
+                            sleep(600);
+                        } else {
+                            sleep(1200);
+                        }
                     }
                 }
             }
@@ -124,9 +130,9 @@ public class GameService {
         template.convertAndSend("/topic/joinable", JoinableGameList.from(getJoinableGames()));
     }
 
-    private void sleep() {
+    private void sleep(int time) {
         try {
-            Thread.sleep(750);
+            Thread.sleep(time);
         } catch (InterruptedException e) {}
     }
 

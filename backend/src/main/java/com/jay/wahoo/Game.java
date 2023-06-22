@@ -23,7 +23,9 @@ public class Game {
     private boolean verbose;
     public final String identifier;
     public boolean awaitingHumanMove = false;
+    public boolean awaitingComputerMove = false;
     public int diceRoll;
+    public boolean diceRollUpdated = false;
     private boolean gameStarted = false;
     public LocalDateTime lastUpdated;
     public List<Marble> movableMarbles = new ArrayList<>();
@@ -31,10 +33,10 @@ public class Game {
     private boolean training;
     private final Integer maxTurns;
 
-    public Game(List<Genome> genomes, boolean verbose, Integer maxTurns) {
+    public Game(List<Genome> genomes, boolean verbose, Integer maxTurns, boolean training) {
         assert genomes.size() == 4;
         this.maxTurns = maxTurns;
-        this.training = true;
+        this.training = training;
         this.verbose = verbose;
         this.identifier = UUID.randomUUID().toString();
         this.players = new Player[4];
@@ -61,8 +63,8 @@ public class Game {
         this.lastUpdated = LocalDateTime.now();
     }
 
-    public Game(List<Genome> genomes, boolean verbose) {
-        this(genomes, verbose, null);
+    public Game(List<Genome> genomes) {
+        this(genomes, false, null, false);
     }
 
     public boolean isJoinable() {
@@ -120,6 +122,7 @@ public class Game {
             playerPos = playerPos % 4;
             currentPlayer = players[playerPos];
             diceRoll = rollDie();
+            diceRollUpdated = true;
             if (diceRoll == 6 && sixCount + 1 >= 3) {
                 gameBoard.resetFurthestMarble(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
                 sixCount = 0;
@@ -127,24 +130,21 @@ public class Game {
             } else {
                 List<TestMove> moves = getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
                 movableMarbles = getMoveableMarbles(moves);
-                if (!movableMarbles.isEmpty() && currentPlayer.isHuman()) {
-                    awaitingHumanMove = true;
-                } else {
-                    if (!movableMarbles.isEmpty()) {
-                        Marble marbleToMove = DeciderService.decide(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount, players, training);
-                        if (marbleToMove != null) {
-                            gameBoard.move(marbleToMove, diceRoll);
-                            currentPlayer.addCorrectMove();
-                        } else {
-                            currentPlayer.addIncorrectMove();
-                        }
+                if (!movableMarbles.isEmpty()) {
+                    if (currentPlayer.isHuman()) {
+                        awaitingHumanMove = true;
+                    } else {
+                        awaitingComputerMove = true;
                     }
+                } else {
                     incrementTurn();
                 }
             }
         }
         lastUpdated = LocalDateTime.now();
-        return new GameState(this);
+        GameState gameState = new GameState(this);
+        diceRollUpdated = false;
+        return gameState;
     }
 
     private List<TestMove> getMoves(Player player) {
@@ -168,6 +168,21 @@ public class Game {
             playerPos++;
             turns++;
         }
+    }
+
+    public GameState moveComputer() {
+        List<TestMove> moves = getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
+        Marble marbleToMove = DeciderService.decide(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount, players, training);
+        if (marbleToMove != null) {
+            gameBoard.move(marbleToMove, diceRoll);
+            currentPlayer.addCorrectMove();
+        } else {
+            currentPlayer.addIncorrectMove();
+        }
+        awaitingComputerMove = false;
+        incrementTurn();
+        lastUpdated = LocalDateTime.now();
+        return new GameState(this);
     }
 
     public GameState moveHuman(String playerIdentifier, int marbleIdentifier) {
@@ -232,7 +247,11 @@ public class Game {
     }
 
     public List<Genome> play() {
-        while (!next().gameComplete) ;
+        while (!next().gameComplete) {
+            if (awaitingComputerMove) {
+                moveComputer();
+            }
+        }
         return getWinningTeam().stream().map(Player::genome).toList();
     }
 
@@ -243,6 +262,7 @@ public class Game {
     public static class GameState extends GameSummary {
         public List<PlayerState> states;
         public int currentRoll;
+        public boolean diceRollUpdated;
         public boolean gameComplete;
         public String currentPlayerId;
         public String currentPlayerName;
@@ -264,6 +284,7 @@ public class Game {
                 .toList();
             this.lastUpdated = game.lastUpdated;
             this.rolledThreeSixes = game.rolledThreeSixes;
+            this.diceRollUpdated = game.diceRollUpdated;
         }
 
         public GameState(Game game, String winningPlayerId, GameEndReason reason) {

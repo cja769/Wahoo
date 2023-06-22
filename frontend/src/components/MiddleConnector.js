@@ -21,12 +21,12 @@ const MiddleConnector = (props) => {
     return (
         <div className={'middle-area'}>
             <div className={'die'}>
-                {diceRoll === 1 && <Die1/>}
-                {diceRoll === 2 && <Die2/>}
-                {diceRoll === 3 && <Die3/>}
-                {diceRoll === 4 && <Die4/>}
-                {diceRoll === 5 && <Die5/>}
-                {diceRoll === 6 && <Die6/>}
+                {diceRoll === 1 && <Die1 playerId={props.boardState.currentPlayerId}/>}
+                {diceRoll === 2 && <Die2 playerId={props.boardState.currentPlayerId}/>}
+                {diceRoll === 3 && <Die3 playerId={props.boardState.currentPlayerId}/>}
+                {diceRoll === 4 && <Die4 playerId={props.boardState.currentPlayerId}/>}
+                {diceRoll === 5 && <Die5 playerId={props.boardState.currentPlayerId}/>}
+                {diceRoll === 6 && <Die6 playerId={props.boardState.currentPlayerId}/>}
             </div>
             <div className={'middle-area-row'}>
                 <Spot marble={getSpotState(playerFour, 0)} selectMarble={props.selectMarble}/>

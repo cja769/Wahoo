@@ -25,6 +25,8 @@
 
 .player-name {
     width : 180px;
+    color: #bbb;
+    font-weight: bold;
 }
 
 .player-name-spacer {

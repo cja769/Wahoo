@@ -1,11 +1,5 @@
 import './Spot.css'
-
-const playerColorMap = {
-    'p0' : 'red',
-    'p1' : 'blue',
-    'p2' : 'green',
-    'p3' : 'yellow'
-};
+import {playerColorMap} from "../utility/constants";
 
 const Spot = (props) => {
     const color = playerColorMap[props.marble?.playerId];

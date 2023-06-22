@@ -85,7 +85,7 @@ public class WahooEnvironment implements Environment {
                             currentGame.add(players.get(j));
                         }
                     }
-                    new Game(currentGame, verbose, maxTurns).play().stream()
+                    new Game(currentGame, verbose, maxTurns, true).play().stream()
                         .forEach(w -> {
                             Integer wins = winnerMap.get(w);
                             if (wins == null) {
