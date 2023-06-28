@@ -3,6 +3,8 @@ package com.jay.wahoo.neat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jay.wahoo.neat.config.NEAT_Config;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +17,9 @@ public class Species implements Comparable{
     private ArrayList<Genome> genomes = new ArrayList<>();
     private float topFitness = 0;
     private int staleness = 0;
+    @Getter
+    @Setter
+    private int stalenessResetCounter = 0;
 
     public Species() {
         super();

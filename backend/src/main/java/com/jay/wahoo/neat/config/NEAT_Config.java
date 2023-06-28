@@ -15,7 +15,8 @@ public class NEAT_Config {
     public static final float DISJOINT_COEFFICENT = 2;
     public static final float WEIGHT_COEFFICENT = 0.4f;
 
-    public static final float STALE_SPECIES = 50;
+    public static final int STALE_SPECIES = 50;
+    public static final int STALE_SPECIES_RESET = 5;
 
 
     public static final float STEPS = 0.1f;

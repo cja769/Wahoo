@@ -57,7 +57,7 @@ public class Pool {
         return generations; // Add for serialization
     }
 
-    public void evaluateFitness(Environment environment){
+    public void evaluateFitness(Environment environment) {
         environment.evaluateFitness(getAllGenomes());
         rankGlobally();
     }
@@ -65,8 +65,8 @@ public class Pool {
     private ArrayList<Genome> getAllGenomes() {
         ArrayList<Genome> allGenome = new ArrayList<>();
 
-        for(Species s: species){
-            for(Genome g: s.getGenomes()){
+        for (Species s : species) {
+            for (Genome g : s.getGenomes()) {
                 allGenome.add(g);
             }
         }
@@ -74,36 +74,37 @@ public class Pool {
     }
 
     // experimental
-    private void rankGlobally(){                // set fitness to rank
+    private void rankGlobally() {                // set fitness to rank
         ArrayList<Genome> allGenome = new ArrayList<>();
 
-        for(Species s: species){
-            for(Genome g: s.getGenomes()){
+        for (Species s : species) {
+            for (Genome g : s.getGenomes()) {
                 allGenome.add(g);
             }
         }
         Collections.sort(allGenome);
-  //      allGenome.get(allGenome.size()-1).writeTofile();
- //       System.out.println("TopFitness : "+ allGenome.get(allGenome.size()-1).getFitness());
-        for (int i =0 ; i<allGenome.size(); i++) {
+        //      allGenome.get(allGenome.size()-1).writeTofile();
+        //       System.out.println("TopFitness : "+ allGenome.get(allGenome.size()-1).getFitness());
+        for (int i = 0; i < allGenome.size(); i++) {
             allGenome.get(i).setPoints(allGenome.get(i).getFitness());      //TODO use adjustedFitness and remove points
             allGenome.get(i).setFitness(i);
         }
     }
 
     @JsonIgnore
-    public Genome getTopGenome(){
+    public Genome getTopGenome() {
         ArrayList<Genome> allGenome = new ArrayList<>();
 
-        for(Species s: species){
-            for(Genome g: s.getGenomes()){
+        for (Species s : species) {
+            for (Genome g : s.getGenomes()) {
                 allGenome.add(g);
             }
         }
-        Collections.sort(allGenome,Collections.reverseOrder());
+        Collections.sort(allGenome, Collections.reverseOrder());
 
         return allGenome.get(0);
     }
+
     // all species must have the totalAdjustedFitness calculated
     @JsonIgnore
     public float calculateGlobalAdjustedFitness() {
@@ -114,18 +115,28 @@ public class Pool {
         return total;
     }
 
-    public void removeStaleSpecies(){
+    public void removeStaleSpecies() {
         ArrayList<Species> survived = new ArrayList<>();
+        List<Species> orderedSpecies = species.stream()
+            .sorted((a, b) -> b.getTopGenome().compareTo(a.getTopGenome()))
+            .toList();
 
-        for(Species s: species){
-            Genome top  = s.getTopGenome();
-            if(top.getFitness() > s.getTopFitness() || top.getFitness() >= getTopFitness()) {
+        for (Species s : species) {
+            Genome top = s.getTopGenome();
+            if (top.getFitness() > s.getTopFitness() || top.getFitness() >= getTopFitness()) {
                 s.setTopFitness(top.getFitness());
-                s.setStaleness(0);
-            } else{
-                s.setStaleness(s.getStaleness()+1);     // increment staleness
             }
-
+            int rank = orderedSpecies.indexOf(s);
+            if (rank == species.size() - 1) {
+                s.setStaleness(s.getStaleness() + 1);
+                s.setStalenessResetCounter(0);
+            } else if (s.getStaleness() != 0) {
+                s.setStalenessResetCounter(s.getStalenessResetCounter() + 1);
+                if (s.getStalenessResetCounter() >= NEAT_Config.STALE_SPECIES_RESET) {
+                    s.setStaleness(0);
+                    s.setStalenessResetCounter(0);
+                }
+            }
             if (s.getStaleness() < NEAT_Config.STALE_SPECIES) {
                 survived.add(s);
             } else {
@@ -133,7 +144,7 @@ public class Pool {
             }
         }
 
-        Collections.sort(survived,Collections.reverseOrder());
+        Collections.sort(survived, Collections.reverseOrder());
         species = survived;
     }
 
@@ -156,8 +167,8 @@ public class Pool {
         }
     }
 
-    public void calculateGenomeAdjustedFitness(){
-        for (Species s: species) {
+    public void calculateGenomeAdjustedFitness() {
+        for (Species s : species) {
             s.calculateGenomeAdjustedFitness();
         }
     }
@@ -194,12 +205,12 @@ public class Pool {
     }
 
     @JsonIgnore
-    public float getTopFitness(){
+    public float getTopFitness() {
         float topFitness = 0;
         Genome topGenome = null;
-        for(Species s : species){
+        for (Species s : species) {
             topGenome = s.getTopGenome();
-            if(topGenome.getFitness()>topFitness){
+            if (topGenome.getFitness() > topFitness) {
                 topFitness = topGenome.getFitness();
             }
         }
