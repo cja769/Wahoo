@@ -31,32 +31,35 @@ const Board = (props) => {
     const [socketClient, setSocketClient] = useState();
 
     const setBoardState = val => {
-        const updateDiceRoll = (roll, count) => {
+        const updateDiceRoll = count => {
             if (count === 0) {
-                setDiceRoll(roll);
+                setDiceRoll(val.currentRoll);
+                if (val.rolledThreeSixes === true) {
+                    setErrorMessage("Player " + val.currentPlayerName + " rolled three sixes!");
+                    setTimeout(() => {
+                        setErrorMessage(null);
+                    }, 3000);
+                    setTimeout(() => {
+                        setBoardStateInternal(val);
+                    }, 300);
+                }
                 return;
             }
             setTimeout(() => {
-                let randomRoll = diceRoll;
-                while (randomRoll === diceRoll) {
+                let randomRoll = val.currentRoll;
+                while (randomRoll === val.currentRoll) {
                     randomRoll = Math.floor(Math.random() * 6) + 1;
                 }
                 setDiceRoll(randomRoll);
-                updateDiceRoll(roll, count - 1);
+                updateDiceRoll(count - 1);
             }, 75)
         }
-        setBoardStateInternal(val);
-        if (boardState.currentRoll === 0) {
-            setDiceRoll(val.currentRoll);
-        }
+        setDiceRoll(val.currentRoll);
         if (val.diceRollUpdated === true) {
-            updateDiceRoll(val.currentRoll, 5);
+            updateDiceRoll(5);
         }
-        if (val.rolledThreeSixes === true) {
-            setErrorMessage("Player " + val.currentPlayerName + " rolled three sixes!");
-            setTimeout(() => {
-                setErrorMessage(null);
-            }, 3000)
+        if (val.rolledThreeSixes === false) {
+            setBoardStateInternal(val);
         }
     }
 
