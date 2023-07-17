@@ -111,6 +111,7 @@ public class WahooEnvironment implements Environment {
                 }
                 log.info("Species training finished");
                 if (beatTop.size() == 0) {
+                    log.info("No genomes did better than the previous top genome");
                     return top;
                 }
                 log.info(beatTop.size() + " genome(s) did better than the previous top genome");
