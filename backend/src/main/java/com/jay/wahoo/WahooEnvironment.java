@@ -28,7 +28,7 @@ public class WahooEnvironment implements Environment {
             .map(this::playSpecies)
             .toList();
         Flux.fromIterable(newTops)
-            .flatMap(Function.identity(), 1)
+            .flatMap(Function.identity(), 2)
             .collectList()
             .flatMap(this::playTopSpeciesRoundRobin)
             .block();
@@ -43,7 +43,7 @@ public class WahooEnvironment implements Environment {
             }
         }
         return Flux.fromIterable(results)
-            .flatMap(Function.identity(), 2)
+            .flatMap(Function.identity(), 1)
             .collectList()
             .flatMap(matchResults -> {
                 int additionalFitness = 10;
@@ -85,7 +85,7 @@ public class WahooEnvironment implements Environment {
             })
             .toList();
         return Flux.fromIterable(matches)
-            .flatMap(Function.identity(), 2)
+            .flatMap(Function.identity(), 1)
             .collectList()
             .map(winnerMaps -> {
                 Map<Boolean, List<MatchResult>> collectedOnComparativeWins = winnerMaps.stream()
@@ -104,15 +104,19 @@ public class WahooEnvironment implements Environment {
                     fitness += 10;
                 }
                 top.setFitness(fitness);
+                fitness += 10;
                 for (MatchResult matchResult : sortedBeatTop) {
                     matchResult.getPlayerTwo().setFitness(fitness);
                     fitness += 10;
                 }
+                log.info("Species training finished");
                 if (beatTop.size() == 0) {
                     return top;
                 }
+                log.info(beatTop.size() + " genome(s) did better than the previous top genome");
                 return beatTop.get(beatTop.size() - 1).getPlayerTwo();
-            });
+            })
+            .doOnSubscribe(s -> log.info("Species training started"));
     }
 
     protected Mono<MatchResult> playMatch(Genome p1, Genome p2, boolean verbose) {
