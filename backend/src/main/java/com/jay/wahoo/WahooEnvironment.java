@@ -90,8 +90,8 @@ public class WahooEnvironment implements Environment {
             .map(winnerMaps -> {
                 Map<Boolean, List<MatchResult>> collectedOnComparativeWins = winnerMaps.stream()
                     .collect(Collectors.groupingBy(mr -> mr.playerTwoWins > mr.playerOneWins));
-                List<MatchResult> beatTop = collectedOnComparativeWins.get(true);
-                List<MatchResult> lostToTop = collectedOnComparativeWins.get(false);
+                List<MatchResult> beatTop = collectedOnComparativeWins.getOrDefault(true, List.of());
+                List<MatchResult> lostToTop = collectedOnComparativeWins.getOrDefault(false, List.of());
                 List<MatchResult> sortedBeatTop = beatTop.stream()
                     .sorted(Comparator.comparingInt(a -> a.playerTwoWins))
                     .toList();
