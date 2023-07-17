@@ -2,6 +2,9 @@ package com.jay.wahoo;
 
 import com.jay.wahoo.neat.Environment;
 import com.jay.wahoo.neat.Genome;
+import com.jay.wahoo.neat.Species;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -9,10 +12,8 @@ import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.regex.MatchResult;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -21,106 +22,141 @@ public class WahooEnvironment implements Environment {
     private final Integer maxTurns = 500;
 
     @Override
-    public void evaluateFitness(ArrayList<Genome> population) {
-        population.forEach(g -> g.setFitness(0));
-        Collections.shuffle(population);
-        start(Mono.just(population))
-            .map(remaining -> {
-                remaining.forEach(g -> g.setFitness(g.getFitness() + 10));
-                return remaining;
-            }).block();
+    public void evaluateFitness(List<Species> species) {
+        log.info("Starting training");
+        List<Mono<Genome>> newTops = species.stream()
+            .map(this::playSpecies)
+            .toList();
+        Flux.fromIterable(newTops)
+            .flatMap(Function.identity(), 1)
+            .collectList()
+            .flatMap(this::playTopSpeciesRoundRobin)
+            .block();
     }
 
-    protected Mono<List<Genome>> start(Mono<List<Genome>> population) {
-        return population
-            .flatMap(pop -> {
-                log.info("Population size is " + pop.size());
-                if (pop.size() >= 4) {
-                    boolean lastGame = pop.size() == 4;
-                    return start(playRound(pop, lastGame ? 1 : 2, lastGame));
+    protected Mono<Genome> playTopSpeciesRoundRobin(List<Genome> genomes) {
+        log.info("Starting species round robin");
+        List<Mono<MatchResult>> results = new ArrayList<>();
+        for (int i = 0; i < genomes.size() - 1; i++) {
+            for (int j = (i + 1); j < genomes.size(); j++) {
+                results.add(playMatch(genomes.get(i), genomes.get(j), false));
+            }
+        }
+        return Flux.fromIterable(results)
+            .flatMap(Function.identity(), 2)
+            .collectList()
+            .flatMap(matchResults -> {
+                int additionalFitness = 10;
+                Map<Genome, Integer> winMap = new HashMap<>();
+                genomes.forEach(g -> winMap.put(g, 0));
+                for (MatchResult result : matchResults) {
+                    {
+                        Integer wins = winMap.get(result.getPlayerOne());
+                        wins += result.getPlayerOneWins();
+                        winMap.put(result.getPlayerOne(), wins);
+                    }
+                    {
+                        Integer wins = winMap.get(result.getPlayerTwo());
+                        wins += result.getPlayerTwoWins();
+                        winMap.put(result.getPlayerTwo(), wins);
+                    }
                 }
-                return Mono.just(pop);
+                List<Entry<Genome, Integer>> sortedEntries = winMap.entrySet().stream()
+                    .sorted(Entry.comparingByValue())
+                    .toList();
+                for (Entry<Genome, Integer> sortedEntry : sortedEntries) {
+                    Genome genome = sortedEntry.getKey();
+                    genome.setFitness(genome.getFitness() + additionalFitness);
+                    additionalFitness += 10;
+                }
+                return playMatch(sortedEntries.get(sortedEntries.size() - 1).getKey(), sortedEntries.get(sortedEntries.size() - 2).getKey(), true, 10)
+                    .map(mr -> sortedEntries.get(sortedEntries.size() - 1).getKey());
             });
     }
 
-    protected Mono<List<Genome>> playRound(List<Genome> population, int numWinnersToReturn, boolean verbose) {
-        List<Genome> players = new ArrayList<>();
-        List<Mono<List<Genome>>> inProgress = new ArrayList<>();
-        for (int i = 0; i < population.size(); i++) {
-            if (players.size() == 4) {
-                inProgress.add(playMatch(players, numWinnersToReturn, verbose));
-                players = new ArrayList<>();
-            }
-            Genome player = population.get(i);
-            if (player.getFitness() == 0) {
-                player.setFitness(10);
-            } else {
-                player.setFitness(player.getFitness() + 10);
-            }
-            players.add(player);
-        }
-        if (players.size() == 4) {
-            inProgress.add(playMatch(players, numWinnersToReturn, verbose));
-        }
-        return Flux.fromIterable(inProgress)
+    protected Mono<Genome> playSpecies(Species species) {
+        Genome top = species.getTopGenome();
+        top.setFitness(0);
+        List<Mono<MatchResult>> matches = species.getGenomes().stream()
+            .filter(g -> !g.equals(top))
+            .map(g -> {
+                g.setFitness(0);
+                return playMatch(top, g, false);
+            })
+            .toList();
+        return Flux.fromIterable(matches)
             .flatMap(Function.identity(), 2)
-            .flatMap(Flux::fromIterable)
-            .collectList();
+            .collectList()
+            .map(winnerMaps -> {
+                Map<Boolean, List<MatchResult>> collectedOnComparativeWins = winnerMaps.stream()
+                    .collect(Collectors.groupingBy(mr -> mr.playerTwoWins > mr.playerOneWins));
+                List<MatchResult> beatTop = collectedOnComparativeWins.get(true);
+                List<MatchResult> lostToTop = collectedOnComparativeWins.get(false);
+                List<MatchResult> sortedBeatTop = beatTop.stream()
+                    .sorted(Comparator.comparingInt(a -> a.playerTwoWins))
+                    .toList();
+                List<MatchResult> sortedLost = lostToTop.stream()
+                    .sorted(Comparator.comparingInt(a -> a.playerTwoWins))
+                    .toList();
+                int fitness = 10;
+                for (MatchResult matchResult : sortedLost) {
+                    matchResult.getPlayerTwo().setFitness(fitness);
+                    fitness += 10;
+                }
+                top.setFitness(fitness);
+                for (MatchResult matchResult : sortedBeatTop) {
+                    matchResult.getPlayerTwo().setFitness(fitness);
+                    fitness += 10;
+                }
+                if (beatTop.size() == 0) {
+                    return top;
+                }
+                return beatTop.get(beatTop.size() - 1).getPlayerTwo();
+            });
     }
 
-    protected Mono<List<Genome>> playMatch(List<Genome> players, int numWinnersToReturn, boolean verbose) {
+    protected Mono<MatchResult> playMatch(Genome p1, Genome p2, boolean verbose) {
+        return playMatch(p1, p2, verbose, 30);
+    }
+
+    protected Mono<MatchResult> playMatch(Genome p1, Genome p2, boolean verbose, int rounds) {
         return Mono.defer(() -> {
             List<Genome> currentGame = new ArrayList<>();
+            currentGame.add(p1);
+            currentGame.add(p2);
+            currentGame.add(p1);
+            currentGame.add(p2);
             Map<Genome, Integer> winnerMap = new HashMap<>();
-            players.forEach(g -> winnerMap.put(g, 0));
-            int rounds = 30;
-            int maxGames = rounds * 3;
-            boolean shouldBreak = false;
-            for (int round = 0; round < rounds && !shouldBreak; round++) {
-                for (int i = 1; i < 4 && !shouldBreak; i++) {
-                    currentGame.add(players.get(0));
-                    currentGame.add(players.get(i));
-                    for (int j = 1; j < 4; j++) {
-                        if (i != j) {
-                            currentGame.add(players.get(j));
-                        }
-                    }
-                    new Game(currentGame, verbose, maxTurns, true).play().stream()
-                        .forEach(w -> {
-                            Integer wins = winnerMap.get(w);
-                            if (wins == null) {
-                                wins = 1;
-                            } else {
-                                wins++;
-                            }
-                            winnerMap.put(w, wins);
-                        });
-                    shouldBreak = shouldShortCircuit(round, 3, i, maxGames, winnerMap.values());
-                    currentGame = new ArrayList<>();
+            winnerMap.put(p1, 0);
+            winnerMap.put(p2, 0);
+            for (int round = 0; round < rounds; round++) {
+                Genome winner = new Game(currentGame, verbose, maxTurns, true).play().stream()
+                    .findFirst()
+                    .get();
+                Integer wins = winnerMap.get(winner);
+                if (wins == null) {
+                    wins = 1;
+                } else {
+                    wins++;
                 }
+                winnerMap.put(winner, wins);
             }
-            List<Genome> sorted = winnerMap.entrySet().stream()
-                .sorted(Entry.comparingByValue(Comparator.reverseOrder()))
-                .map(Entry::getKey)
-                .toList();
-            int j = sorted.size() - 1;
-            for (int i = 0; i < sorted.size(); i++) {
-                sorted.get(i).setFitness(sorted.get(i).getFitness() + j);
-                j--;
-            }
-            return Mono.just(sorted.stream().limit(numWinnersToReturn).toList());
+            return Mono.just(MatchResult.builder()
+                .playerOneWins(winnerMap.get(p1))
+                .playerTwoWins(winnerMap.get(p2))
+                .playerOne(p1)
+                .playerTwo(p2)
+                .build());
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    protected static boolean shouldShortCircuit(int roundsComplete, int gamesInRound, int gamesFinishedInRound, int maxGames, Collection<Integer> wins) {
-        int playedGames = (roundsComplete * gamesInRound) + gamesFinishedInRound;
-        int remainingGames = maxGames - playedGames;
-        Integer maxWins = wins.stream()
-            .max(Integer::compareTo)
-            .orElse(0);
-        long possibleWinners = wins.stream()
-            .filter(numWins -> (numWins + remainingGames) >= maxWins)
-            .count();
-        return possibleWinners == 1;
+    @Builder
+    @Data
+    private static class MatchResult {
+        int playerOneWins;
+        Genome playerOne;
+        int playerTwoWins;
+        Genome playerTwo;
     }
+
 }

@@ -1,6 +1,7 @@
 package com.jay.wahoo.neat;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * assign Fitness to each genome
@@ -9,6 +10,6 @@ import java.util.ArrayList;
  */
 public interface Environment {
 
-     void evaluateFitness(ArrayList<Genome> population);
+     void evaluateFitness(List<Species> species);
 
 }

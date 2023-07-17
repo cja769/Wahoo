@@ -58,19 +58,8 @@ public class Pool {
     }
 
     public void evaluateFitness(Environment environment) {
-        environment.evaluateFitness(getAllGenomes());
+        environment.evaluateFitness(species);
         rankGlobally();
-    }
-
-    private ArrayList<Genome> getAllGenomes() {
-        ArrayList<Genome> allGenome = new ArrayList<>();
-
-        for (Species s : species) {
-            for (Genome g : s.getGenomes()) {
-                allGenome.add(g);
-            }
-        }
-        return allGenome;
     }
 
     // experimental
