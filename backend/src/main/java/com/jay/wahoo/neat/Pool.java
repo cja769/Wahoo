@@ -119,13 +119,17 @@ public class Pool {
             if (rank == species.size() - 1) {
                 s.setStaleness(s.getStaleness() + 1);
                 s.setStalenessResetCounter(0);
+                log.info("Species was last place");
             } else if (s.getStaleness() != 0) {
                 s.setStalenessResetCounter(s.getStalenessResetCounter() + 1);
                 if (s.getStalenessResetCounter() >= NEAT_Config.STALE_SPECIES_RESET) {
                     s.setStaleness(0);
                     s.setStalenessResetCounter(0);
+                    log.info("Staleness counter reset");
                 }
             }
+            log.info("Staleness : " + s.getStaleness());
+            log.info("Staleness counter : " + s.getStalenessResetCounter());
             if (s.getStaleness() < NEAT_Config.STALE_SPECIES) {
                 survived.add(s);
             } else {
