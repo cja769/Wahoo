@@ -116,7 +116,7 @@ public class Pool {
                 s.setTopFitness(top.getFitness());
             }
             int rank = orderedSpecies.indexOf(s);
-            log.info("Species finished " + (rank + 1) + " of " + species.size());
+            log.info("Species(" + s.getIdentifier() + ") finished " + (rank + 1) + " of " + species.size());
             int oldStaleness = s.getStaleness();
             if (rank >= species.size() * NEAT_Config.STALE_POS_THRESHOLD) {
                 s.setStaleness(s.getStaleness() + 1);

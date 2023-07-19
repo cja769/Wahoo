@@ -109,7 +109,7 @@ public class WahooEnvironment implements Environment {
                     matchResult.getPlayerTwo().setFitness(fitness);
                     fitness += 10;
                 }
-                log.info("Species training finished");
+                log.info("Species(" + species.getIdentifier() + ") training finished");
                 if (beatTop.size() == 0) {
                     log.info("No genomes did better than the previous top genome");
                     return top;
@@ -117,7 +117,7 @@ public class WahooEnvironment implements Environment {
                 log.info(beatTop.size() + " genome(s) did better than the previous top genome");
                 return beatTop.get(beatTop.size() - 1).getPlayerTwo();
             })
-            .doOnSubscribe(s -> log.info("Species training started"));
+            .doOnSubscribe(s -> log.info("Species(" + species.getIdentifier() + ") training started"));
     }
 
     protected Mono<MatchResult> playMatch(Genome p1, Genome p2, boolean verbose) {

@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
+import java.util.UUID;
 
 /**
  * Created by vishnu on 7/1/17.
@@ -17,9 +18,12 @@ public class Species implements Comparable{
     private ArrayList<Genome> genomes = new ArrayList<>();
     private float topFitness = 0;
     private int staleness = 0;
+    @Getter
+    @Setter
+    private String identifier;
 
     public Species() {
-        super();
+        this.identifier = UUID.randomUUID().toString();
     }
 
     public void calculateGenomeAdjustedFitness(){
