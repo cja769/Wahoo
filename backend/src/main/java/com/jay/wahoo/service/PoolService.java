@@ -1,5 +1,6 @@
 package com.jay.wahoo.service;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.neat.Pool;
@@ -31,7 +32,10 @@ public class PoolService {
                 }
                 poolJson = sb.toString();
             }
-            pool = new ObjectMapper().readerFor(Pool.class).readValue(poolJson);
+            pool = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .readerFor(Pool.class)
+                .readValue(poolJson);
         } else {
             pool.initializePool();
         }
@@ -51,7 +55,10 @@ public class PoolService {
                 }
                 poolJson = sb.toString();
             }
-            Best best = new ObjectMapper().readerFor(Best.class).readValue(poolJson);
+            Best best = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .readerFor(Best.class)
+                .readValue(poolJson);
             return best.genomes;
         }
         Pool pool = getPool();

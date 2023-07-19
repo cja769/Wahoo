@@ -17,9 +17,6 @@ public class Species implements Comparable{
     private ArrayList<Genome> genomes = new ArrayList<>();
     private float topFitness = 0;
     private int staleness = 0;
-    @Getter
-    @Setter
-    private int stalenessResetCounter = 0;
 
     public Species() {
         super();

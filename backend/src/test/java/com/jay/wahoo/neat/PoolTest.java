@@ -22,9 +22,7 @@ public class PoolTest {
         pool.getSpecies().add(s2);
         pool.removeStaleSpecies();
         assertThat(s1.getStaleness()).isEqualTo(1);
-        assertThat(s1.getStalenessResetCounter()).isEqualTo(0);
         assertThat(s2.getStaleness()).isEqualTo(0);
-        assertThat(s2.getStalenessResetCounter()).isEqualTo(0);
         assertThat(pool.getSpecies().size()).isEqualTo(2);
     }
 
@@ -39,38 +37,12 @@ public class PoolTest {
         g2.setFitness(2);
         s1.getGenomes().add(g1);
         s2.getGenomes().add(g2);
-        s2.setStalenessResetCounter(NEAT_Config.STALE_SPECIES_RESET - 1);
         s2.setStaleness(10);
         pool.getSpecies().add(s1);
         pool.getSpecies().add(s2);
         pool.removeStaleSpecies();
         assertThat(s1.getStaleness()).isEqualTo(1);
-        assertThat(s1.getStalenessResetCounter()).isEqualTo(0);
         assertThat(s2.getStaleness()).isEqualTo(0);
-        assertThat(s2.getStalenessResetCounter()).isEqualTo(0);
-        assertThat(pool.getSpecies().size()).isEqualTo(2);
-    }
-
-    @Test
-    public void test_removeStaleSpecies_incrementResetButNoReset() {
-        Pool pool = new Pool();
-        Species s1 = new Species();
-        Species s2 = new Species();
-        Genome g1 = new Genome();
-        Genome g2 = new Genome();
-        g1.setFitness(1);
-        g2.setFitness(2);
-        s1.getGenomes().add(g1);
-        s2.getGenomes().add(g2);
-        s2.setStalenessResetCounter(0);
-        s2.setStaleness(10);
-        pool.getSpecies().add(s1);
-        pool.getSpecies().add(s2);
-        pool.removeStaleSpecies();
-        assertThat(s1.getStaleness()).isEqualTo(1);
-        assertThat(s1.getStalenessResetCounter()).isEqualTo(0);
-        assertThat(s2.getStaleness()).isEqualTo(10);
-        assertThat(s2.getStalenessResetCounter()).isEqualTo(1);
         assertThat(pool.getSpecies().size()).isEqualTo(2);
     }
 
@@ -86,16 +58,12 @@ public class PoolTest {
         s1.getGenomes().add(g1);
         s2.getGenomes().add(g2);
         s1.setStaleness(NEAT_Config.STALE_SPECIES - 1);
-        s1.setStalenessResetCounter(NEAT_Config.STALE_SPECIES_RESET - 1);
-        s2.setStalenessResetCounter(0);
         s2.setStaleness(10);
         pool.getSpecies().add(s1);
         pool.getSpecies().add(s2);
         pool.removeStaleSpecies();
         assertThat(s1.getStaleness()).isEqualTo(NEAT_Config.STALE_SPECIES);
-        assertThat(s1.getStalenessResetCounter()).isEqualTo(0);
-        assertThat(s2.getStaleness()).isEqualTo(10);
-        assertThat(s2.getStalenessResetCounter()).isEqualTo(1);
+        assertThat(s2.getStaleness()).isEqualTo(0);
         assertThat(pool.getSpecies().size()).isEqualTo(1);
     }
 }

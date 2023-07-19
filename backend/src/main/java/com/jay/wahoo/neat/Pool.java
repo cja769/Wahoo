@@ -116,20 +116,15 @@ public class Pool {
                 s.setTopFitness(top.getFitness());
             }
             int rank = orderedSpecies.indexOf(s);
-            if (rank == species.size() - 1) {
+            log.info("Species finished " + (rank + 1) + " of " + species.size());
+            if (rank >= species.size() * NEAT_Config.STALE_POS_THRESHOLD) {
                 s.setStaleness(s.getStaleness() + 1);
-                s.setStalenessResetCounter(0);
-                log.info("Species was last place");
-            } else if (s.getStaleness() != 0) {
-                s.setStalenessResetCounter(s.getStalenessResetCounter() + 1);
-                if (s.getStalenessResetCounter() >= NEAT_Config.STALE_SPECIES_RESET) {
-                    s.setStaleness(0);
-                    s.setStalenessResetCounter(0);
-                    log.info("Staleness counter reset");
-                }
+                log.info("Staleness increased");
+            } else {
+                s.setStaleness(0);
+                log.info("Staleness reset");
             }
             log.info("Staleness : " + s.getStaleness());
-            log.info("Staleness counter : " + s.getStalenessResetCounter());
             if (s.getStaleness() < NEAT_Config.STALE_SPECIES) {
                 survived.add(s);
             } else {
