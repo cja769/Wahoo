@@ -117,14 +117,13 @@ public class Pool {
             }
             int rank = orderedSpecies.indexOf(s);
             log.info("Species finished " + (rank + 1) + " of " + species.size());
+            int oldStaleness = s.getStaleness();
             if (rank >= species.size() * NEAT_Config.STALE_POS_THRESHOLD) {
                 s.setStaleness(s.getStaleness() + 1);
-                log.info("Staleness increased");
             } else {
                 s.setStaleness(0);
-                log.info("Staleness reset");
             }
-            log.info("Staleness : " + s.getStaleness());
+            log.info("Staleness : " + oldStaleness + " -> " + s.getStaleness());
             if (s.getStaleness() < NEAT_Config.STALE_SPECIES) {
                 survived.add(s);
             } else {
