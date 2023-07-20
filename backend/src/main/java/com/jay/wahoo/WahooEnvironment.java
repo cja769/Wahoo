@@ -121,7 +121,7 @@ public class WahooEnvironment implements Environment {
     }
 
     protected Mono<MatchResult> playMatch(Genome p1, Genome p2, boolean verbose) {
-        return playMatch(p1, p2, verbose, 30);
+        return playMatch(p1, p2, verbose, 60);
     }
 
     protected Mono<MatchResult> playMatch(Genome p1, Genome p2, boolean verbose, int rounds) {
