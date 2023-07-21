@@ -2,6 +2,7 @@ package com.jay.wahoo;
 
 import com.jay.wahoo.neat.Genome;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,11 @@ public class Player {
     private int correctMoves;
     @Getter
     private int incorrectMoves;
+    @Getter
+    private List<Integer> diceRolls = new ArrayList<>();
+    @Getter
+    @Setter
+    private boolean useDiceRolls;
 
     public Player(Genome genome, Integer identifier, String name) {
         this.genome = genome;
@@ -39,6 +45,18 @@ public class Player {
             marbles.add(marble);
             startBoard.addToBoard(marble);
         }
+    }
+
+    public Integer popDiceRoll() {
+        return this.diceRolls.remove(diceRolls.size() - 1);
+    }
+
+    public void setDiceRolls(List<Integer> diceRolls) {
+        this.diceRolls = diceRolls;
+        this.useDiceRolls = true;
+    }
+    public void addDiceRoll(int diceRoll) {
+        getDiceRolls().add(diceRoll);
     }
 
     public void addCorrectMove() {

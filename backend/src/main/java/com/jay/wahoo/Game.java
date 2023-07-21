@@ -5,6 +5,8 @@ import com.jay.wahoo.Player.PlayerState;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.service.DeciderService;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -121,7 +123,14 @@ public class Game {
         if (!awaitingHumanMove && !isGameComplete()) {
             playerPos = playerPos % 4;
             currentPlayer = players[playerPos];
-            diceRoll = rollDie();
+            if (currentPlayer.isUseDiceRolls() && !currentPlayer.getDiceRolls().isEmpty()) {
+                diceRoll = currentPlayer.popDiceRoll();
+            } else if (currentPlayer.isUseDiceRolls()) {
+                diceRoll = rollDie();
+            } else {
+                diceRoll = rollDie();
+                currentPlayer.addDiceRoll(diceRoll);
+            }
             diceRollUpdated = true;
             if (diceRoll == 6 && sixCount + 1 >= 3) {
                 gameBoard.resetFurthestMarble(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
@@ -247,6 +256,41 @@ public class Game {
     }
 
     public List<Genome> play() {
+        while (!next().gameComplete) {
+            if (awaitingComputerMove) {
+                moveComputer();
+            }
+        }
+        return getWinningTeam().stream().map(Player::genome).toList();
+    }
+
+    public WinState playAndReturnDiceRolls() {
+        while (!next().gameComplete) {
+            if (awaitingComputerMove) {
+                moveComputer();
+            }
+        }
+        List<List<Integer>> diceRolls = new ArrayList<>();
+        for (int i = 0; i < players.length; i++) {
+            diceRolls.add(players[i].getDiceRolls());
+        }
+        return WinState.builder()
+            .winners(getWinningTeam().stream().map(Player::genome).toList())
+            .diceRolls(diceRolls)
+            .build();
+    }
+
+    @Builder
+    @Data
+    public static class WinState {
+        private List<Genome> winners;
+        private List<List<Integer>> diceRolls;
+    }
+
+    public List<Genome> play(List<List<Integer>> diceRolls) {
+        for (int i = 0; i < players.length; i++) {
+            players[i].setDiceRolls(diceRolls.get(i));
+        }
         while (!next().gameComplete) {
             if (awaitingComputerMove) {
                 moveComputer();

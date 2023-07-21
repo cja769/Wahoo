@@ -1,5 +1,6 @@
 package com.jay.wahoo;
 
+import com.jay.wahoo.Game.WinState;
 import com.jay.wahoo.neat.Environment;
 import com.jay.wahoo.neat.Genome;
 import com.jay.wahoo.neat.Species;
@@ -134,10 +135,18 @@ public class WahooEnvironment implements Environment {
             Map<Genome, Integer> winnerMap = new HashMap<>();
             winnerMap.put(p1, 0);
             winnerMap.put(p2, 0);
+            List<List<Integer>> moves = null;
             for (int round = 0; round < rounds; round++) {
-                Genome winner = new Game(currentGame, verbose, maxTurns, true).play().stream()
-                    .findFirst()
-                    .get();
+                Genome winner;
+                if (moves == null) {
+                    WinState winState = new Game(currentGame, verbose, maxTurns, true).playAndReturnDiceRolls();
+                    winner = winState.getWinners().get(0);
+                    moves = winState.getDiceRolls();
+                    moves.add(moves.remove(0));
+                } else {
+                    winner = new Game(currentGame, verbose, maxTurns, true).play(moves).get(0);
+                    moves = null;
+                }
                 Integer wins = winnerMap.get(winner);
                 if (wins == null) {
                     wins = 1;
