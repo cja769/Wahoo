@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class Game {
@@ -146,6 +145,7 @@ public class Game {
                         awaitingComputerMove = true;
                     }
                 } else {
+                    currentPlayer.addNoMove();
                     incrementTurn();
                 }
             }
@@ -226,14 +226,15 @@ public class Game {
     private List<Player> getPlayersSortedByMovePercentage() {
         return Arrays.stream(players)
             .filter(p -> !p.isHuman())
-            .sorted((a, b) -> {
-                int compare = b.getCorrectMovePercentage().compareTo(a.getCorrectMovePercentage());
-                if (compare == 0) {
-                    return Integer.compare(b.getCorrectMoves(), a.getCorrectMoves());
-                }
-                return compare;
-            })
+            .sorted(getWinnerSort())
             .toList();
+    }
+
+    protected static Comparator<Player> getWinnerSort() {
+        return Comparator.comparing(Player::getMovePercentage)
+            .reversed()
+            .thenComparing(Player::getIncorrectMoves)
+            .thenComparing(Player::getNoMoves);
     }
 
     public List<Player> getWinningTeam() {
@@ -243,12 +244,12 @@ public class Game {
         if (verbose) {
             getPlayersSortedByMovePercentage()
                 .forEach(p -> {
-                    log.info("Player " + p.getName() + " : Correct moves " + p.getCorrectMoves() + "; Incorrect moves " + p.getIncorrectMoves() + "; Correct move percentage " + p.getCorrectMovePercentage());
+                    log.info("Player " + p.getName() + " : Correct moves " + p.getCorrectMoves() + "; Incorrect moves " + p.getIncorrectMoves() + "; Correct move percentage " + p.getMovePercentage());
                 });
             log.info("It took " + turns + " turns to finish the game\n");
         }
         boolean winnersMadeAllCorrectMoves = winners.stream()
-            .allMatch(p -> p.getCorrectMovePercentage().equals(1.0));
+            .allMatch(p -> p.getMovePercentage().equals(1.0));
         if (!winners.isEmpty() && (winnersMadeAllCorrectMoves || !training)) {
             return winners;
         }

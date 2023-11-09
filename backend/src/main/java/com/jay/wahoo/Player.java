@@ -1,12 +1,15 @@
 package com.jay.wahoo;
 
 import com.jay.wahoo.neat.Genome;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@EqualsAndHashCode
 public class Player {
 
     private final List<Marble> marbles;
@@ -28,6 +31,8 @@ public class Player {
     @Getter
     @Setter
     private boolean useDiceRolls;
+    @Getter
+    private int noMoves;
 
     public Player(Genome genome, Integer identifier, String name) {
         this.genome = genome;
@@ -67,8 +72,20 @@ public class Player {
         incorrectMoves++;
     }
 
-    public Double getCorrectMovePercentage() {
-        return correctMoves / (correctMoves + incorrectMoves + .0);
+    public void addNoMove() {
+        if (shouldCountNoMove()) {
+            noMoves++;
+        }
+    }
+
+    private boolean shouldCountNoMove() {
+        boolean hasHadChanceToGetOut = correctMoves > 0 || incorrectMoves > 0;
+        boolean hasLessThanThreeMarblesHome = safeBoard.getNumberOfMarblesComplete() < 3;
+        return hasHadChanceToGetOut && hasLessThanThreeMarblesHome && !isHuman();
+    }
+
+    public Double getMovePercentage() {
+        return correctMoves / (correctMoves + incorrectMoves + noMoves + .0);
     }
 
     public void makeHuman(String name) {
@@ -164,4 +181,8 @@ public class Player {
         }
     }
 
+    @Override
+    public String toString() {
+        return identifier;
+    }
 }
