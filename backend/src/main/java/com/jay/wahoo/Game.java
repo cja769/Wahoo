@@ -231,10 +231,9 @@ public class Game {
     }
 
     protected static Comparator<Player> getWinnerSort() {
-        return Comparator.comparing(Player::getMovePercentage)
-            .reversed()
-            .thenComparing(Player::getIncorrectMoves)
-            .thenComparing(Player::getNoMoves);
+        return Comparator.comparing(Player::getValidMovePercentage)
+            .thenComparing(Player::getOverallMovePercentage)
+            .reversed();
     }
 
     public List<Player> getWinningTeam() {
@@ -244,13 +243,11 @@ public class Game {
         if (verbose) {
             getPlayersSortedByMovePercentage()
                 .forEach(p -> {
-                    log.info("Player " + p.getName() + " : Correct moves " + p.getCorrectMoves() + "; Incorrect moves " + p.getIncorrectMoves() + "; Correct move percentage " + p.getMovePercentage());
+                    log.info("Player " + p.getName() + " : Correct moves " + p.getCorrectMoves() + "; Incorrect moves " + p.getIncorrectMoves() + "; Missed turns " + p.getNoMoves() + "; Valid move percentage " + p.getValidMovePercentage() + "; Overall move percentage " + p.getOverallMovePercentage());
                 });
             log.info("It took " + turns + " turns to finish the game\n");
         }
-        boolean winnersMadeAllCorrectMoves = winners.stream()
-            .allMatch(p -> p.getMovePercentage().equals(1.0));
-        if (!winners.isEmpty() && (winnersMadeAllCorrectMoves || !training)) {
+        if (!winners.isEmpty() && !training) {
             return winners;
         }
         return getTopCorrectMovePercentagePlayers();

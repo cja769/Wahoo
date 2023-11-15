@@ -3,7 +3,6 @@ package com.jay.wahoo;
 import com.jay.wahoo.neat.Genome;
 import org.junit.jupiter.api.Test;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -18,7 +17,7 @@ public class GameTest {
         Player p2 = new Player(new Genome(), 2, null);
         Player p3 = new Player(new Genome(), 3, null);
         addMoves(p1, 10, 0, 0);
-        addMoves(p2, 8, 0, 2);
+        addMoves(p2, 8, 0, 3);
         addMoves(p3, 8, 1, 1);
         List<Player> expected = List.of(p1, p2, p3);
         List<Player> actual = Stream.of(p3, p2, p1)

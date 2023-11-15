@@ -4,12 +4,10 @@ import com.jay.wahoo.neat.Genome;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EqualsAndHashCode
 public class Player {
 
     private final List<Marble> marbles;
@@ -84,7 +82,11 @@ public class Player {
         return hasHadChanceToGetOut && hasLessThanThreeMarblesHome && !isHuman();
     }
 
-    public Double getMovePercentage() {
+    public Double getValidMovePercentage() {
+        return correctMoves / (correctMoves + incorrectMoves + .0);
+    }
+
+    public Double getOverallMovePercentage() {
         return correctMoves / (correctMoves + incorrectMoves + noMoves + .0);
     }
 
