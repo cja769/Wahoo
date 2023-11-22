@@ -1,5 +1,6 @@
 package com.jay.wahoo;
 
+import com.jay.wahoo.Board.MoveResult;
 import com.jay.wahoo.Board.TestMove;
 
 import java.util.List;
@@ -18,8 +19,8 @@ public class GameBoard {
         return findBoardWithMarble(m).testMove(m, move, m.player().startBoard().getMarblePositionOnTable(m));
     }
 
-    public void move(Marble m, int move) {
-        findBoardWithMarble(m).move(m, move);
+    public MoveResult move(Marble m, int move) {
+        return findBoardWithMarble(m).move(m, move);
     }
 
     protected Board findBoardWithMarble(Marble m) {

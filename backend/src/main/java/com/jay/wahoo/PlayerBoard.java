@@ -49,23 +49,26 @@ public class PlayerBoard implements ContainingBoard {
     }
 
     @Override
-    public void move(Marble m, int move) {
+    public MoveResult move(Marble m, int move) {
         Integer position = findMarblePosition(m).orElse(-1);
         if (position > -1) {
             area[position] = null;
         }
         if ((position + move) >= NUM_SPOTS_BEFORE_SAFE && m.player().equals(nextSafeBoard.getPlayer())) {
-            nextSafeBoard.move(m, (position + move) - (NUM_SPOTS_BEFORE_SAFE - 1));
+            return nextSafeBoard.move(m, (position + move) - (NUM_SPOTS_BEFORE_SAFE - 1));
         } else if ((position + move) >= area.length) {
-            nextPlayerBoard.move(m, (position + move) - (area.length - 1));
-        } else {
-            Marble existing = area[position + move];
-            if (existing != null) {
-                existing.player().startBoard().addToBoard(existing);
-            }
-            area[position + move] = m;
+            return nextPlayerBoard.move(m, (position + move) - (area.length - 1));
         }
-
+        Marble existing = area[position + move];
+        area[position + move] = m;
+        if (existing != null) {
+            existing.player().startBoard().addToBoard(existing);
+            if (m.isSameTeam(existing)) {
+                return MoveResult.TEAM_KILL;
+            }
+            return MoveResult.OPPONENT_KILL;
+        }
+        return MoveResult.NONE;
     }
 
     public List<Marble> getFlattenedBoard() {

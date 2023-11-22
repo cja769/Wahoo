@@ -183,7 +183,7 @@ public class Game {
         List<TestMove> moves = getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
         Marble marbleToMove = DeciderService.decide(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount, players, training);
         if (marbleToMove != null) {
-            gameBoard.move(marbleToMove, diceRoll);
+            gameBoard.move(marbleToMove, diceRoll).resultFunction.accept(currentPlayer);
             currentPlayer.addCorrectMove();
         } else {
             currentPlayer.addIncorrectMove();
@@ -232,8 +232,11 @@ public class Game {
 
     protected static Comparator<Player> getWinnerSort() {
         return Comparator.comparing(Player::getValidMovePercentage)
-            .thenComparing(Player::getOverallMovePercentage)
+            .thenComparing(Player::getOverallMoveFitness)
+            .thenComparing(Player::getNetKills)
+            .thenComparing(p -> p.safeBoard().getNumberOfMarblesComplete())
             .reversed();
+
     }
 
     public List<Player> getWinningTeam() {
@@ -243,7 +246,15 @@ public class Game {
         if (verbose) {
             getPlayersSortedByMovePercentage()
                 .forEach(p -> {
-                    log.info("Player " + p.getName() + " : Correct moves " + p.getCorrectMoves() + "; Incorrect moves " + p.getIncorrectMoves() + "; Missed turns " + p.getNoMoves() + "; Valid move percentage " + p.getValidMovePercentage() + "; Overall move percentage " + p.getOverallMovePercentage());
+                    log.info(
+                        "Player " + p.getName() +
+                        " : Correct moves " + p.getCorrectMoves() +
+                        "; Incorrect moves " + p.getIncorrectMoves() +
+                        "; Missed turns " + p.getNoMoves() +
+                        "; Valid move percentage " + p.getValidMovePercentage() +
+                        "; Overall move percentage " + p.getOverallMovePercentage() +
+                        "; Net kills " + p.getNetKills() +
+                        "; Num complete " + p.safeBoard().getNumberOfMarblesComplete());
                 });
             log.info("It took " + turns + " turns to finish the game\n");
         }

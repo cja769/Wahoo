@@ -16,11 +16,19 @@ public class GameTest {
         Player p1 = new Player(new Genome(), 1, null);
         Player p2 = new Player(new Genome(), 2, null);
         Player p3 = new Player(new Genome(), 3, null);
+        Player p4 = new Player(new Genome(), 3, null);
+        Player p5 = new Player(new Genome(), 3, null);
         addMoves(p1, 10, 0, 0);
         addMoves(p2, 8, 0, 3);
-        addMoves(p3, 8, 1, 1);
-        List<Player> expected = List.of(p1, p2, p3);
-        List<Player> actual = Stream.of(p3, p2, p1)
+        addMoves(p3, 80, 1, 1);
+        addMoves(p4, 8, 1, 5);
+        addMoves(p5, 8, 1, 2);
+        addKills(p3, 5);
+        addKills(p4, 4);
+        addKills(p5, 4);
+        p4.safeBoard().getArea()[5] = new Marble(null, null);
+        List<Player> expected = List.of(p1, p2, p3, p4, p5);
+        List<Player> actual = Stream.of(p5, p3, p4, p2, p1)
             .sorted(Game.getWinnerSort())
             .toList();
         assertThat(actual).isEqualTo(expected);
@@ -35,6 +43,12 @@ public class GameTest {
     private void addMoves(Player p, Consumer<Player> consumer, int times) {
         for (int i = 0; i < times; i++) {
             consumer.accept(p);
+        }
+    }
+
+    private void addKills(Player p, int times) {
+        for (int i = 0; i < times; i++) {
+            p.addOpponentKill();
         }
     }
 }

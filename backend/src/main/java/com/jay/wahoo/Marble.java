@@ -10,4 +10,8 @@ public record Marble(Player player, Integer identifier) {
         }
         return false;
     }
+
+    public boolean isSameTeam(Marble m) {
+        return player.isTeammate(m.player);
+    }
 }

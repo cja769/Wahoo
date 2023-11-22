@@ -15,11 +15,12 @@ public class StartBoard implements ContainingBoard {
     }
 
     @Override
-    public void move(Marble m, int move) {
-        m.player().playerBoard().move(m, 1);
+    public MoveResult move(Marble m, int move) {
+        MoveResult result = m.player().playerBoard().move(m, 1);
         Integer marblePosition = findMarblePosition(m)
             .orElseThrow(() -> new IllegalArgumentException("Can't move marble out of start board because it's not there"));
         area[marblePosition] = null;
+        return result;
     }
 
     public void addToBoard(Marble m) {

@@ -1,7 +1,6 @@
 package com.jay.wahoo;
 
 import com.jay.wahoo.neat.Genome;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,6 +30,8 @@ public class Player {
     private boolean useDiceRolls;
     @Getter
     private int noMoves;
+    @Getter
+    private int netKills;
 
     public Player(Genome genome, Integer identifier, String name) {
         this.genome = genome;
@@ -76,10 +77,26 @@ public class Player {
         }
     }
 
+    public void addTeammateKill() {
+        if (shouldCountKill()) {
+            netKills--;
+        }
+    }
+
+    public void addOpponentKill() {
+        if (shouldCountKill()) {
+            netKills++;
+        }
+    }
+
     private boolean shouldCountNoMove() {
         boolean hasHadChanceToGetOut = correctMoves > 0 || incorrectMoves > 0;
         boolean hasLessThanThreeMarblesHome = safeBoard.getNumberOfMarblesComplete() < 3;
         return hasHadChanceToGetOut && hasLessThanThreeMarblesHome && !isHuman();
+    }
+
+    private boolean shouldCountKill() {
+        return safeBoard.getNumberOfMarblesComplete() < 3 && !isHuman();
     }
 
     public Double getValidMovePercentage() {
@@ -88,6 +105,10 @@ public class Player {
 
     public Double getOverallMovePercentage() {
         return correctMoves / (correctMoves + incorrectMoves + noMoves + .0);
+    }
+
+    public int getOverallMoveFitness() {
+       return getOverallMovePercentage() >= .9 ? 1 : 0;
     }
 
     public void makeHuman(String name) {
@@ -138,6 +159,10 @@ public class Player {
 
     public PlayerBoard playerBoard() {
         return playerBoard;
+    }
+
+    public boolean isTeammate(Player p) {
+        return partner.equals(p);
     }
 
     @Override

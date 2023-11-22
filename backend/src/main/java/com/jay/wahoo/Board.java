@@ -1,12 +1,23 @@
 package com.jay.wahoo;
 
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public interface Board {
     TestMove testMove(Marble m, int move, int priorBoardSpots);
-    void move(Marble m, int move);
+    MoveResult move(Marble m, int move);
+
+    @RequiredArgsConstructor
+    enum MoveResult {
+        TEAM_KILL(Player::addTeammateKill),
+        OPPONENT_KILL(Player::addOpponentKill),
+        NONE(p -> {});
+
+        final Consumer<Player> resultFunction;
+     }
 
     @AllArgsConstructor
     class TestMove {

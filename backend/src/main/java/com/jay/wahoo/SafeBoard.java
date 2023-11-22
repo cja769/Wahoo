@@ -57,7 +57,7 @@ public class SafeBoard implements ContainingBoard {
     }
 
     @Override
-    public void move(Marble m, int move) {
+    public MoveResult move(Marble m, int move) {
         Integer startingPos = findMarblePosition(m)
             .orElse(-1);
         if (startingPos > -1) {
@@ -67,14 +67,13 @@ public class SafeBoard implements ContainingBoard {
             throw new IllegalArgumentException("This move is not legal");
         }
         area[startingPos + move] = m;
+        return MoveResult.NONE;
     }
 
     @Override
     public int getMarblePositionOnTable(Marble marble) {
         return findMarblePosition(marble)
-            .orElseThrow(() -> {
-                return new IllegalArgumentException("Marble is not on board");
-            });
+            .orElseThrow(() -> new IllegalArgumentException("Marble is not on board"));
     }
 
     @Override
