@@ -15,8 +15,8 @@ public class StartBoard implements ContainingBoard {
     }
 
     @Override
-    public MoveResult move(Marble m, int move) {
-        MoveResult result = m.player().playerBoard().move(m, 1);
+    public Move move(Marble m, int move) {
+        Move result = m.player().playerBoard().move(m, 1);
         Integer marblePosition = findMarblePosition(m)
             .orElseThrow(() -> new IllegalArgumentException("Can't move marble out of start board because it's not there"));
         area[marblePosition] = null;

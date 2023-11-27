@@ -57,7 +57,7 @@ public class SafeBoard implements ContainingBoard {
     }
 
     @Override
-    public MoveResult move(Marble m, int move) {
+    public Move move(Marble m, int move) {
         Integer startingPos = findMarblePosition(m)
             .orElse(-1);
         if (startingPos > -1) {
@@ -67,7 +67,10 @@ public class SafeBoard implements ContainingBoard {
             throw new IllegalArgumentException("This move is not legal");
         }
         area[startingPos + move] = m;
-        return MoveResult.NONE;
+        return Move.builder()
+            .spotsMoved(move)
+            .moveResult(MoveResult.NONE)
+            .build();
     }
 
     @Override

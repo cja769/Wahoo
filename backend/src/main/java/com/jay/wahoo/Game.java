@@ -183,7 +183,7 @@ public class Game {
         List<TestMove> moves = getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
         Marble marbleToMove = DeciderService.decide(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer, currentPlayer.genome(), moves, diceRoll, sixCount, players, training);
         if (marbleToMove != null) {
-            gameBoard.move(marbleToMove, diceRoll).resultFunction.accept(currentPlayer);
+            gameBoard.move(marbleToMove, diceRoll).execute(currentPlayer, marbleToMove);
             currentPlayer.addCorrectMove();
         } else {
             currentPlayer.addIncorrectMove();
@@ -199,13 +199,11 @@ public class Game {
         if (!awaitingHumanMove) {
             throw new IllegalArgumentException("Can't move human because their moved is not being waited on");
         }
-        List<Marble> selectedMarbles = getMoveableMarbles(getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer)).stream()
+        Marble marble = getMoveableMarbles(getMoves(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer)).stream()
             .filter(m -> m.player().identifier().equals(playerIdentifier) && m.identifier().equals(marbleIdentifier))
-            .toList();
-        if (selectedMarbles.isEmpty()) {
-            throw new IllegalArgumentException("Marble " + marbleIdentifier + " for player " + playerIdentifier + " cannot be moved by player " + currentPlayer.identifier());
-        }
-        gameBoard.move(selectedMarbles.get(0), diceRoll);
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Marble " + marbleIdentifier + " for player " + playerIdentifier + " cannot be moved by player " + currentPlayer.identifier()));
+        gameBoard.move(marble, diceRoll).execute(currentPlayer, marble);
         awaitingHumanMove = false;
         incrementTurn();
         lastUpdated = LocalDateTime.now();
@@ -225,16 +223,15 @@ public class Game {
 
     private List<Player> getPlayersSortedByMovePercentage() {
         return Arrays.stream(players)
-            .filter(p -> !p.isHuman())
             .sorted(getWinnerSort())
             .toList();
     }
 
     protected static Comparator<Player> getWinnerSort() {
         return Comparator.comparing(Player::getValidMovePercentage)
-            .thenComparing(Player::getOverallMoveFitness)
-            .thenComparing(Player::getNetKills)
+            .thenComparing(Player::getFitness)
             .thenComparing(p -> p.safeBoard().getNumberOfMarblesComplete())
+            .thenComparing(p -> p.partner().safeBoard().getNumberOfMarblesComplete())
             .reversed();
 
     }
@@ -248,12 +245,14 @@ public class Game {
                 .forEach(p -> {
                     log.info(
                         "Player " + p.getName() +
-                        " : Correct moves " + p.getCorrectMoves() +
+                        " : Fitness " + p.getFitness() +
+                        "; Correct moves " + p.getCorrectMoves() +
                         "; Incorrect moves " + p.getIncorrectMoves() +
                         "; Missed turns " + p.getNoMoves() +
                         "; Valid move percentage " + p.getValidMovePercentage() +
                         "; Overall move percentage " + p.getOverallMovePercentage() +
-                        "; Net kills " + p.getNetKills() +
+                        "; Team kills " + p.getTeamKill() +
+                        "; Opponent kills " + p.getOpponentKill() +
                         "; Num complete " + p.safeBoard().getNumberOfMarblesComplete());
                 });
             log.info("It took " + turns + " turns to finish the game\n");

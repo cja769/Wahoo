@@ -1,6 +1,7 @@
 package com.jay.wahoo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +27,7 @@ public class PlayerBoard implements ContainingBoard {
 
     @Override
     public TestMove testMove(Marble m, int move, int priorBoardSpots) {
-        Integer position = findMarblePosition(m).orElse(-1);
+        int position = findMarblePosition(m).orElse(-1);
         int adjustedPriorBoardSpots = priorBoardSpots - position;
         for (int i = move; i > 0; i--) {
             position++;
@@ -49,26 +50,32 @@ public class PlayerBoard implements ContainingBoard {
     }
 
     @Override
-    public MoveResult move(Marble m, int move) {
-        Integer position = findMarblePosition(m).orElse(-1);
+    public Move move(Marble m, int move) {
+        int position = findMarblePosition(m).orElse(-1);
         if (position > -1) {
             area[position] = null;
         }
         if ((position + move) >= NUM_SPOTS_BEFORE_SAFE && m.player().equals(nextSafeBoard.getPlayer())) {
-            return nextSafeBoard.move(m, (position + move) - (NUM_SPOTS_BEFORE_SAFE - 1));
+            Move result = nextSafeBoard.move(m, (position + move) - (NUM_SPOTS_BEFORE_SAFE - 1));
+            result.setSpotsMoved(move);
+            return result;
         } else if ((position + move) >= area.length) {
-            return nextPlayerBoard.move(m, (position + move) - (area.length - 1));
+            Move result = nextPlayerBoard.move(m, (position + move) - (area.length - 1));
+            result.setSpotsMoved(move);
+            return result;
         }
         Marble existing = area[position + move];
         area[position + move] = m;
+        MoveResult moveResult = MoveResult.NONE;
         if (existing != null) {
             existing.player().startBoard().addToBoard(existing);
-            if (m.isSameTeam(existing)) {
-                return MoveResult.TEAM_KILL;
-            }
-            return MoveResult.OPPONENT_KILL;
+            moveResult = m.isSameTeam(existing) ? MoveResult.TEAM_KILL : MoveResult.OPPONENT_KILL;
         }
-        return MoveResult.NONE;
+        return Move.builder()
+            .moveResult(moveResult)
+            .spotsMoved(move)
+            .killedMarble(existing)
+            .build();
     }
 
     public List<Marble> getFlattenedBoard() {
@@ -78,11 +85,7 @@ public class PlayerBoard implements ContainingBoard {
     }
 
     private List<Marble> areaToList() {
-        List<Marble> board = new ArrayList<>();
-        for (int i = 0 ; i < area.length; i++) {
-            board.add(area[i]);
-        }
-        return board;
+        return new ArrayList<>(Arrays.asList(area));
     }
 
     private List<Marble> getFlattenedBoardInternal(Player player) {

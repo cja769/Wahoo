@@ -1,6 +1,33 @@
 package com.jay.wahoo;
 
-public record Marble(Player player, Integer identifier) {
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+public class Marble {
+
+    private final Player player;
+    private final Integer identifier;
+    private int distance;
+
+    public void incrementDistance(int increment) {
+        distance += increment;
+    }
+
+    public void resetDistance() {
+        distance = 0;
+    }
+
+    public int distance() {
+        return distance;
+    }
+
+    public Player player() {
+        return player;
+    }
+
+    public Integer identifier() {
+        return identifier;
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -14,4 +41,5 @@ public record Marble(Player player, Integer identifier) {
     public boolean isSameTeam(Marble m) {
         return player.isTeammate(m.player);
     }
+
 }

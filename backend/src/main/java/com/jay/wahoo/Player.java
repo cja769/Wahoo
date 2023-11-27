@@ -31,7 +31,10 @@ public class Player {
     @Getter
     private int noMoves;
     @Getter
-    private int netKills;
+    private int teamKill;
+    @Getter int opponentKill;
+    @Getter
+    private int fitness;
 
     public Player(Genome genome, Integer identifier, String name) {
         this.genome = genome;
@@ -71,6 +74,14 @@ public class Player {
         incorrectMoves++;
     }
 
+    public void incrementFitness(int amountToAdd) {
+        fitness += amountToAdd;
+    }
+
+    public void decrementFitness(int amountToRemove) {
+        fitness -= amountToRemove;
+    }
+
     public void addNoMove() {
         if (shouldCountNoMove()) {
             noMoves++;
@@ -79,24 +90,24 @@ public class Player {
 
     public void addTeammateKill() {
         if (shouldCountKill()) {
-            netKills--;
+            teamKill++;
         }
     }
 
     public void addOpponentKill() {
         if (shouldCountKill()) {
-            netKills++;
+            opponentKill++;
         }
     }
 
     private boolean shouldCountNoMove() {
         boolean hasHadChanceToGetOut = correctMoves > 0 || incorrectMoves > 0;
         boolean hasLessThanThreeMarblesHome = safeBoard.getNumberOfMarblesComplete() < 3;
-        return hasHadChanceToGetOut && hasLessThanThreeMarblesHome && !isHuman();
+        return hasHadChanceToGetOut && hasLessThanThreeMarblesHome;
     }
 
     private boolean shouldCountKill() {
-        return safeBoard.getNumberOfMarblesComplete() < 3 && !isHuman();
+        return safeBoard.getNumberOfMarblesComplete() < 3;
     }
 
     public Double getValidMovePercentage() {
@@ -105,10 +116,6 @@ public class Player {
 
     public Double getOverallMovePercentage() {
         return correctMoves / (correctMoves + incorrectMoves + noMoves + .0);
-    }
-
-    public int getOverallMoveFitness() {
-       return getOverallMovePercentage() >= .9 ? 1 : 0;
     }
 
     public void makeHuman(String name) {
@@ -167,8 +174,7 @@ public class Player {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Player) {
-            Player other = (Player) obj;
+        if (obj instanceof Player other) {
             return identifier().equals(other.identifier());
         }
         return false;

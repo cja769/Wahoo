@@ -1,22 +1,47 @@
 package com.jay.wahoo;
 
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 
 public interface Board {
     TestMove testMove(Marble m, int move, int priorBoardSpots);
-    MoveResult move(Marble m, int move);
+    Move move(Marble m, int move);
+
+    @Getter
+    @Builder
+    class Move {
+        private MoveResult moveResult;
+        @Setter
+        private int spotsMoved;
+        private Marble killedMarble;
+        public void execute(Player p, Marble marbleMoved) {
+            marbleMoved.incrementDistance(spotsMoved);
+            moveResult.move.action(p, killedMarble, spotsMoved);
+        }
+    }
+    @FunctionalInterface
+    interface MoveAction {
+        void action(Player player, Marble killed, int spotsMoved);
+    }
 
     @RequiredArgsConstructor
     enum MoveResult {
-        TEAM_KILL(Player::addTeammateKill),
-        OPPONENT_KILL(Player::addOpponentKill),
-        NONE(p -> {});
+        TEAM_KILL((p, killed, moved) -> {
+            p.addTeammateKill();
+            p.incrementFitness(moved - killed.distance());
+            killed.player().decrementFitness(killed.distance());
+            killed.resetDistance();
+        }),
+        OPPONENT_KILL((p, killed, moved) -> {
+            p.addOpponentKill();
+            p.incrementFitness(moved + killed.distance());
+            killed.player().decrementFitness(killed.distance());
+            killed.resetDistance();
+        }),
+        NONE((p, killed, moved) -> p.incrementFitness(moved));
 
-        final Consumer<Player> resultFunction;
+        final MoveAction move;
      }
 
     @AllArgsConstructor
