@@ -132,7 +132,10 @@ public class Game {
             }
             diceRollUpdated = true;
             if (diceRoll == 6 && sixCount + 1 >= 3) {
-                gameBoard.resetFurthestMarble(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
+                Integer distanceReset = gameBoard.resetFurthestMarble(currentPlayer.safeBoard().isComplete() ? currentPlayer.partner() : currentPlayer);
+                if (distanceReset != null) {
+                    currentPlayer.decrementFitness(distanceReset);
+                }
                 sixCount = 0;
                 rolledThreeSixes = true;
             } else {

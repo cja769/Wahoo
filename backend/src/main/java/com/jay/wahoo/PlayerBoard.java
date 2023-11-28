@@ -97,25 +97,24 @@ public class PlayerBoard implements ContainingBoard {
         return board;
     }
 
-    public boolean restFurthestMarble(Player p) {
-        Integer index = null;
+    public Integer restFurthestMarble(Player p) {
+        if (!nextSafeBoard.getPlayer().equals(p)) {
+            Integer marbleDistance = nextPlayerBoard.restFurthestMarble(p);
+            if (marbleDistance != null) {
+                return marbleDistance;
+            }
+        }
         for (int i = 0; i < area.length; i++) {
             Marble m = area[i];
             if (m != null && m.player().equals(p)) {
-                index = i;
+                p.startBoard().addToBoard(area[i]);
+                area[i] = null;
+                int distance = m.distance();
+                m.resetDistance();
+                return distance;
             }
         }
-        if (!nextSafeBoard.getPlayer().equals(p)) {
-            if (nextPlayerBoard.restFurthestMarble(p)) {
-                return true;
-            }
-        }
-        if (index != null) {
-            p.startBoard().addToBoard(area[index]);
-            area[index] = null;
-            return true;
-        }
-        return false;
+        return null;
     }
 
     @Override

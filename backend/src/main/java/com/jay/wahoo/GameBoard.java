@@ -31,7 +31,7 @@ public class GameBoard {
             .orElseThrow(() -> new IllegalArgumentException("No board contains marble " + m));
     }
 
-    public boolean resetFurthestMarble(Player p) {
+    public Integer resetFurthestMarble(Player p) {
         return p.playerBoard().restFurthestMarble(p);
     }
 
