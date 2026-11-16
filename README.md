@@ -19,6 +19,25 @@ The backend listens on port 8081 by default. The old NEAT-only network and
 training endpoints return HTTP 410. Training runs offline using the commands
 below. A Java heuristic chooses legal moves when no model is configured.
 
+## Deploy to Render
+
+The root Dockerfile builds React and packages its static assets into the Java
+jar. The UI, API, and SockJS endpoint share one HTTPS origin. For local frontend
+development, the React dev server proxies API and WebSocket traffic to port
+8081.
+
+Create a Render Web Service from this repository, choose **Docker** and the
+**Free** instance, and use `/actuator/health` for the health check. The
+`render.yaml` blueprint contains the same defaults. Java reads Render's `PORT`
+and the image caps Java heap at 256 MiB. The free service may need to wake up
+before loading the page. Games and seats are in memory and reset on a restart.
+
+The image includes a PPO playtest actor. **Create Game** uses the default bot
+policy and **Create Game with PPO Bots** opts all computer seats into the
+playtest model. The default is the Java heuristic unless `WAHOO_POLICY_PATH`
+points to an approved model. `WAHOO_PREVIEW_POLICY_PATH` optionally enables the
+preview when running the jar outside Docker. Training runs offline.
+
 ## Train on CPU or GPU
 
 Use Python 3.12 on Linux or macOS. Set `JAVA_HOME` to a JDK 17 installation if

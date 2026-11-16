@@ -2,7 +2,6 @@ import {useEffect, useState} from "react";
 import './Home.css';
 import JoinGame from "./JoinGame";
 import {initSocket} from "../utility/webSocket";
-import getBackendUrl from "../utility/constants";
 
 const Home = (props) => {
     const [games, setGames] = useState({
@@ -10,9 +9,11 @@ const Home = (props) => {
     })
     const [selectedGame, setSelectedGame] = useState();
     const [disableCreate, setDisableCreate] = useState(false);
+    const [ppoPreview, setPpoPreview] = useState(false);
+    const [error, setError] = useState(null);
     const [socketClient, setSocketClient] = useState();
     useEffect(() => {
-        fetch(getBackendUrl() + "/api/games")
+        fetch("/api/games")
             .then(r => r.json())
             .then(j => setGames(j));
         if (!socketClient) {
@@ -21,22 +22,38 @@ const Home = (props) => {
     }, [socketClient, setSocketClient]);
 
     useEffect(() => {
+        fetch("/api/bots")
+            .then(response => response.ok ? response.json() : {})
+            .then(bots => setPpoPreview(Boolean(bots.ppoPreview)))
+            .catch(() => setPpoPreview(false));
+    }, []);
+
+    useEffect(() => {
         const found = games?.games?.find(g => g.gameId === selectedGame?.gameId);
         if (found) {
             setSelectedGame(found);
         }
     }, [games, selectedGame]);
 
-    const createGame = () => {
+    const createGame = async (preview = false) => {
+        setError(null);
         setDisableCreate(true);
-        fetch(getBackendUrl() + "/api/create")
-            .then(() => {
-                setDisableCreate(false);
-            });
-    }
+        try {
+            const response = await fetch("/api/create" + (preview ? "?ppoPreview=true" : ""));
+            if (!response.ok) {
+                throw new Error("Could not create the game. Please try again.");
+            }
+            setGames(await response.json());
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setDisableCreate(false);
+        }
+    };
 
     const joinGame = (gameId, playerId, playerName) => {
-        fetch(getBackendUrl() + "/api/join", {
+        setError(null);
+        fetch("/api/join", {
             method: "POST",
             headers: {
                 'Accept' : 'application/json',
@@ -48,17 +65,31 @@ const Home = (props) => {
                 playerName
             })
         })
-        .then(r => r.text())
-        .then(t => props.setPlayerToken(t, gameId, playerId));
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Could not join the game. The seat may already be taken.");
+            }
+            return response.text();
+        })
+        .then(token => props.setPlayerToken(token, gameId, playerId))
+        .catch(error => {
+            setSelectedGame(null);
+            setError(error.message);
+        });
     };
     return (
         <div className={'center'}>
             <div>
                 <div className={'center'}>
                     <div>
-                        <button className={'button'} disabled={disableCreate} onClick={createGame}>Create Game</button>
+                        <button className={'button'} disabled={disableCreate} onClick={() => createGame()}>Create Game</button>
+                        {ppoPreview && (
+                            <button className={'button'} disabled={disableCreate}
+                                    onClick={() => createGame(true)}>Create Game with PPO Bots</button>
+                        )}
                     </div>
                 </div>
+                {error && <p role="alert">{error}</p>}
                 {games.games && games.games?.length !== 0 && (<div className={'center'}>
                     <h2>Join a Game</h2>
                 </div>)}
@@ -69,7 +100,7 @@ const Home = (props) => {
                         }
                         return (
                             <div className={'center'} key={g.gameId} onClick={onClick}>
-                                <span className={'joinable-game'}>{g.gameId}</span>
+                                <span className={'joinable-game'}>{g.ppoPreview ? "PPO bots · " : ""}{g.gameId}</span>
                             </div>
                         )
                     })

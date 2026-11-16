@@ -1,0 +1,9 @@
+.git
+backend/.gradle
+backend/build
+frontend/build
+frontend/node_modules
+training
+runs
+.venv
+.pytest_cache

@@ -22,11 +22,13 @@ public class JoinableGameList {
 
     public static class JoinableGame {
         public String gameId;
+        public boolean ppoPreview;
         public List<JoinableGameTeam> players;
 
         public static JoinableGame from(Game game) {
             JoinableGame g = new JoinableGame();
             g.gameId = game.identifier;
+            g.ppoPreview = game.ppoPreview;
             Map<Player, Player> partnerMap = new HashMap<>();
             for (int i = 0; i < game.players.length; i++) {
                 Player p = game.players[i];

@@ -29,6 +29,7 @@ public class Game {
     private int legalCount;
     private volatile boolean gameStarted;
     public final String identifier;
+    public final boolean ppoPreview;
     public Player currentPlayer;
     public boolean awaitingHumanMove;
     public boolean awaitingComputerMove;
@@ -37,17 +38,17 @@ public class Game {
     public LocalDateTime lastUpdated;
     public boolean rolledThreeSixes;
 
-    public Game(Policy policy) {
+    public Game(Policy policy, boolean ppoPreview) {
         this(policy, seat -> ThreadLocalRandom.current().nextInt(1, 7), 0, Integer.MAX_VALUE,
-            UUID.randomUUID().toString());
+            UUID.randomUUID().toString(), ppoPreview);
         lastUpdated = LocalDateTime.now();
     }
 
     public static Game headless(IntUnaryOperator dice, int startingSeat, int maxTurns) {
-        return new Game(null, dice, startingSeat, maxTurns, null);
+        return new Game(null, dice, startingSeat, maxTurns, null, false);
     }
 
-    private Game(Policy policy, IntUnaryOperator dice, int startingSeat, int maxTurns, String identifier) {
+    private Game(Policy policy, IntUnaryOperator dice, int startingSeat, int maxTurns, String identifier, boolean ppoPreview) {
         if (startingSeat < 0 || startingSeat >= players.length || maxTurns < 1) {
             throw new IllegalArgumentException("Invalid starting seat or turn limit");
         }
@@ -56,6 +57,7 @@ public class Game {
         this.maxTurns = maxTurns;
         this.playerPos = startingSeat;
         this.identifier = identifier;
+        this.ppoPreview = ppoPreview;
         for (int i = 0; i < players.length; i++) {
             players[i] = new Player(i);
         }
@@ -69,7 +71,7 @@ public class Game {
         return !gameStarted;
     }
 
-    public void joinGame(String name, String playerIdentifier) {
+    public String joinGame(String name, String playerIdentifier) {
         if (!isJoinable()) {
             throw new IllegalArgumentException("Can't join in progress game");
         }
@@ -77,8 +79,9 @@ public class Game {
         if (matched.isHuman()) {
             throw new IllegalArgumentException("That seat already has a human player");
         }
-        matched.makeHuman(name);
+        String token = matched.makeHuman(name);
         lastUpdated = LocalDateTime.now();
+        return token;
     }
 
     public void leaveGame(String playerId) {

@@ -5,7 +5,6 @@ import MiddleConnector from "./MiddleConnector";
 import StartArea from "./StartArea";
 import {getPlayerState} from "../utility/marblePositionHelper";
 import {initSocket} from "../utility/webSocket";
-import getBackendUrl from "../utility/constants";
 
 const Board = (props) => {
     const originalPlayerOrder = ['p0', 'p1', 'p2', 'p3']
@@ -65,10 +64,18 @@ const Board = (props) => {
 
     useEffect(() => {
         if (props.gameId) {
-            fetch(getBackendUrl() + "/api/game/" + props.gameId)
-                .then(r => r.json())
-                .then(body => {
-                    setBoardState(body);
+            fetch("/api/game/" + props.gameId)
+                .then(response => {
+                    if (response.status === 404) {
+                        props.clearPlayerState();
+                    } else if (response.ok) {
+                        return response.json();
+                    }
+                })
+                .then(state => {
+                    if (state) {
+                        setBoardState(state);
+                    }
                 });
             if (!socketClient) {
                 setSocketClient(initSocket('/topic/game/' + props.gameId, message => {
@@ -80,7 +87,9 @@ const Board = (props) => {
 
     const start = () => {
         setDisableStartButton(true);
-        fetch(getBackendUrl() + "/api/start/" + boardState.gameId)
+        fetch("/api/start/" + boardState.gameId, {
+            headers: {"X-Wahoo-Seat": props.playerToken}
+        })
             .then(r => {
                 if (r.status !== 200) {
                     throw new Error("Error getting next move");
@@ -96,7 +105,7 @@ const Board = (props) => {
     }
 
     const forfeitGame = () => {
-        fetch(getBackendUrl() + "/api/forfeit", {
+        fetch("/api/forfeit", {
             method: "POST",
             headers: {
                 'Accept' : 'application/json',
@@ -115,7 +124,7 @@ const Board = (props) => {
     }
 
     const leaveUnstartedGame = () => {
-        fetch(getBackendUrl() + "/api/leave", {
+        fetch("/api/leave", {
             method: "POST",
             headers: {
                 'Accept' : 'application/json',
@@ -131,7 +140,7 @@ const Board = (props) => {
 
     const selectMarble = (playerId, marbleId) => {
         if (boardState.awaitingHumanMove === true) {
-            fetch(getBackendUrl() + "/api/play", {
+            fetch("/api/play", {
                 method: "POST",
                 headers: {
                     'Accept' : 'application/json',

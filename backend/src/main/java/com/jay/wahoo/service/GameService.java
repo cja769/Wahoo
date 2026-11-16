@@ -4,10 +4,13 @@ import com.jay.wahoo.Game;
 import com.jay.wahoo.Game.GameState;
 import com.jay.wahoo.Player;
 import com.jay.wahoo.ai.Policy;
+import com.jay.wahoo.config.PolicyConfig.BotPolicies;
 import com.jay.wahoo.controller.dto.JoinableGameList;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.dto.GameSummary.GameEndReason;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,14 +31,18 @@ public class GameService {
     private final Set<String> activeLoops = ConcurrentHashMap.newKeySet();
     private static final int TTL_DAYS = 1;
     private final SimpMessagingTemplate template;
-    private final Policy computerPolicy;
+    private final BotPolicies computerPolicies;
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.HOURS)
     public void pruneMaps() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(TTL_DAYS);
-        gameMap.entrySet().stream()
-            .filter(entry -> entry.getValue().lastUpdated.isBefore(cutoff))
-            .forEach(entry -> gameMap.remove(entry.getKey()));
+        gameMap.forEach((gameId, game) -> {
+            synchronized (game) {
+                if (game.lastUpdated.isBefore(cutoff)) {
+                    gameMap.remove(gameId, game);
+                }
+            }
+        });
         finishedGames.entrySet().stream()
             .filter(entry -> entry.getValue().lastUpdated.isBefore(cutoff))
             .forEach(entry -> finishedGames.remove(entry.getKey()));
@@ -71,8 +78,15 @@ public class GameService {
             .toList();
     }
 
-    public Game createGame() {
-        Game game = new Game(computerPolicy);
+    public boolean isPreviewAvailable() {
+        return computerPolicies.preview().isPresent();
+    }
+
+    public Game createGame(boolean preview) {
+        Policy policy = preview ? computerPolicies.preview()
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "PPO preview is unavailable"))
+            : computerPolicies.defaultPolicy();
+        Game game = new Game(policy, preview);
         gameMap.put(game.identifier, game);
         sendGameStateUpdate(game);
         return game;
@@ -82,11 +96,14 @@ public class GameService {
         return Optional.ofNullable(gameMap.get(id));
     }
 
-    public Game joinGame(Game game, String playerName, String playerId) {
+    public String joinGame(Game game, String playerName, String playerId) {
         synchronized (game) {
-            game.joinGame(playerName, playerId);
+            if (!gameMap.containsKey(game.identifier)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+            String token = game.joinGame(playerName, playerId);
             sendGameStateUpdate(game);
-            return game;
+            return token;
         }
     }
 

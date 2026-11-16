@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: wahoo
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
