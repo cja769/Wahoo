@@ -13,7 +13,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import configure
 import torch
 
-from .bridge import WahooVecEnv
+from .bridge import SCHEMA, WahooVecEnv
 from .checkpoints import OpponentPool, run_lock, save_checkpoint, write_json
 
 
@@ -65,6 +65,7 @@ def train(args):
     run = args.run.resolve()
     torch.set_num_threads(args.torch_threads)
     settings = {
+        "rules_schema": SCHEMA,
         "seed": args.seed, "envs": args.envs, "turn_limit": args.turn_limit,
         "n_steps": args.rollout, "batch_size": args.batch, "n_epochs": args.epochs,
         "learning_rate": args.learning_rate, "gamma": args.gamma,
@@ -80,7 +81,7 @@ def train(args):
         if marker.exists() != args.resume:
             raise ValueError("Use --resume for an existing checkpoint, or a fresh --run directory")
         if args.resume and json.loads(config_file.read_text()) != settings:
-            raise ValueError("Resume with the original rollout, seed and PPO configuration in config.json")
+            raise ValueError("Resume with the same rules schema, rollout, seed and PPO configuration in config.json")
         if not args.resume:
             write_json(config_file, settings)
         pool = OpponentPool(run)
@@ -126,6 +127,7 @@ def _learn(args, run, model, env, pool):
             "games_finished_this_session": status.finished,
         }
         if status.recent:
+            metrics["mean_reward"] = float(np.mean([info["episode"]["r"] for info in status.recent]))
             for stat in ("team_win", "unfinished", "turns", "completed"):
                 metrics[f"mean_{stat}"] = float(np.mean([info[stat] for info in status.recent]))
         for name, value in ppo.logger.name_to_value.items():

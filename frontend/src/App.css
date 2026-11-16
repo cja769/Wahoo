@@ -1,6 +1,3 @@
-@media screen and (max-width: 560px) {
-    .app {
-        overflow: scroll;
-        width : 560px;
-    }
+.app {
+    min-width: 0;
 }

@@ -127,6 +127,22 @@ def test_training_resume_checkpoint_history_and_python_java_parity(tmp_path):
     assert steps == [64, 128]
 
 
+def test_resume_rejects_a_checkpoint_from_older_rules(tmp_path):
+    base = ["--run", str(tmp_path), "--envs", "4", "--workers", "2", "--steps", "64",
+            "--rollout", "16", "--batch", "32", "--epochs", "1", "--width", "16"]
+    train(parser().parse_args(base))
+    config_path = tmp_path / "config.json"
+    config = json.loads(config_path.read_text())
+    config["rules_schema"] -= 1
+    config_path.write_text(json.dumps(config))
+    marker = (tmp_path / "latest.json").read_text()
+
+    with pytest.raises(ValueError, match="same rules schema"):
+        train(parser().parse_args([*base, "--resume"]))
+
+    assert (tmp_path / "latest.json").read_text() == marker
+
+
 def test_graceful_stop_checkpoints_an_optimized_rollout(tmp_path):
     process = subprocess.Popen(
         [sys.executable, "-m", "training.train", "--run", str(tmp_path), "--envs", "4",

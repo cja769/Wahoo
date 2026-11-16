@@ -11,7 +11,7 @@ from stable_baselines3.common.vec_env import VecEnv
 ROOT = Path(__file__).resolve().parents[1]
 CLASSES = ROOT / "backend" / "build" / "classes" / "java" / "main"
 OBS_SIZE = 123
-SCHEMA = 1
+SCHEMA = 3
 ACTIONS = 4
 ACTIVE = -2
 UNFINISHED = -1
@@ -139,7 +139,8 @@ class WahooVecEnv(VecEnv):
             for index in remaining:
                 rng = self.rngs[index]
                 episode = int(self.episodes[index])
-                team, start = episode % 2, (episode // 2) % 4
+                team = episode % 2
+                start = int(rng.integers(4))
                 self.teams[index] = team
                 self.episodes[index] += 1
                 dice_seed = int(rng.integers(2**63, dtype=np.int64))

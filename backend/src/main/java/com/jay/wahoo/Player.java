@@ -1,9 +1,14 @@
 package com.jay.wahoo;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 public class Player {
+    private static final SecureRandom TOKEN_RANDOM = new SecureRandom();
     private final List<Marble> marbles;
     private final SafeBoard safeBoard = new SafeBoard();
     private final StartBoard startBoard = new StartBoard();
@@ -13,7 +18,7 @@ public class Player {
     private final String botName;
     private String name;
     private Player partner;
-    private boolean human;
+    private volatile String seatToken;
 
     public Player(int seat) {
         this.seat = seat;
@@ -29,18 +34,28 @@ public class Player {
         marbles = List.copyOf(initialMarbles);
     }
 
-    public void makeHuman(String name) {
+    String makeHuman(String name) {
+        byte[] token = new byte[32];
+        TOKEN_RANDOM.nextBytes(token);
         this.name = name;
-        human = true;
+        seatToken = Base64.getUrlEncoder().withoutPadding().encodeToString(token);
+        return seatToken;
     }
 
-    public void makeBot() {
+    public boolean hasSeatToken(String providedToken) {
+        String assignedToken = seatToken;
+        return assignedToken != null && providedToken != null
+            && MessageDigest.isEqual(assignedToken.getBytes(StandardCharsets.UTF_8),
+                providedToken.getBytes(StandardCharsets.UTF_8));
+    }
+
+    void makeBot() {
         name = botName;
-        human = false;
+        seatToken = null;
     }
 
     public String getName() { return name; }
-    public boolean isHuman() { return human; }
+    public boolean isHuman() { return seatToken != null; }
     public int seat() { return seat; }
     public int team() { return seat % 2; }
     public String identifier() { return identifier; }

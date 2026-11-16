@@ -34,21 +34,88 @@ class GameRulesTest {
     }
 
     @Test
-    void sixWithoutAnyLegalMoveEndsTurnAndClearsStreak() {
-        Game game = game(6, 6, 6);
+    void legalSixRequiresAMoveAndBlockedSixStillRerollsAndCountsTowardPenalty() {
+        Game game = game(6, 6, 6, 6, 6, 6, 5, 3);
         for (int i = 0; i < 3; i++) {
-            place(game, 0, i, 52 + i);
+            place(game, 0, i, GameBoard.SAFE_START + i);
         }
-        place(game, 0, 3, 44);
-        rollAndPlay(game, 3); // Lands on 50, with its own safe marbles blocking the next 6.
-        assertEquals(1, game.sixCount());
+        Marble track = place(game, 0, 3, 44);
+
         game.advanceRoll();
-        assertEquals(0, game.actionMask());
+        assertTrue(game.awaitingComputerMove);
+        game.advanceRoll();
+        assertEquals(1, game.rollCount());
+        assertThrows(IllegalArgumentException.class, () -> game.playAction(0));
         assertEquals(0, game.sixCount());
+        game.moveComputer();
+        assertEquals(50, track.position());
+
+        Game.GameState blocked = game.next();
+        assertFalse(blocked.awaitingHumanMove);
+        assertEquals("p0", blocked.currentPlayerId);
+        assertEquals(0, game.actionMask());
+        assertEquals(2, game.sixCount());
+        assertEquals(0, game.turnCount());
+        assertTrue(game.next().penaltyApplied);
+        assertEquals(GameBoard.HOME, track.position());
+
+        rollAndPlay(game, 3);
+        rollAndPlay(game, 3);
+        assertTrue(game.next().penaltyApplied);
+        assertEquals(GameBoard.HOME, track.position());
+        game.advanceRoll();
         assertEquals(1, game.turnCount());
         game.advanceRoll();
         assertEquals(1, game.currentPlayer.seat());
-        assertEquals(15, game.actionMask());
+    }
+
+    @Test
+    void humanWithoutAnEligibleTrackMarbleStillRerollsAfterThreeBlockedSixes() {
+        Game game = game(6, 6, 6, 6, 4);
+        game.joinGame("Human", "p0");
+        for (int i = 0; i < 4; i++) {
+            place(game, 0, i, GameBoard.SAFE_START + i);
+        }
+        for (int count = 1; count <= 2; count++) {
+            Game.GameState state = game.next();
+            assertFalse(state.awaitingHumanMove);
+            assertFalse(game.awaitingComputerMove);
+            assertEquals("p0", state.currentPlayerId);
+            assertEquals(count, game.sixCount());
+            assertEquals(0, game.turnCount());
+        }
+        Game.GameState penalty = game.next();
+        assertTrue(penalty.rolledThreeSixes);
+        assertFalse(penalty.penaltyApplied);
+        assertEquals(0, game.sixCount());
+        for (int i = 0; i < 4; i++) {
+            assertEquals(GameBoard.SAFE_START + i, game.players[0].marbles().get(i).position());
+        }
+        game.advanceRoll();
+        assertEquals(0, game.turnCount());
+        assertEquals(1, game.sixCount());
+        game.advanceRoll();
+        assertEquals(1, game.turnCount());
+        assertEquals(0, game.sixCount());
+    }
+
+    @Test
+    void humanSixWithLegalMovesCannotRollAgainBeforePlaying() {
+        Game game = game(6, 4);
+        game.joinGame("Human", "p0");
+        game.advanceRoll();
+        assertTrue(game.awaitingHumanMove);
+        game.advanceRoll();
+        assertEquals(1, game.rollCount());
+        assertThrows(IllegalArgumentException.class, () -> game.playAction(-1));
+        game.moveHuman("p0", 0);
+        assertEquals(1, game.sixCount());
+        game.advanceRoll();
+        assertEquals(0, game.currentPlayer.seat());
+        assertTrue(game.awaitingHumanMove);
+        game.moveHuman("p0", 0);
+        assertEquals(1, game.turnCount());
+        assertEquals(0, game.sixCount());
     }
 
     @Test
@@ -88,12 +155,31 @@ class GameRulesTest {
     }
 
     @Test
+    void safeLaneHasFiveSlotsAndRequiresTheFinalFourToBePacked() {
+        Game game = game(1);
+        Player player = game.players[0];
+        assertEquals(5, player.safeBoard().getArea().length);
+        for (int i = 0; i < 4; i++) {
+            place(game, 0, i, GameBoard.SAFE_START + i);
+        }
+        Marble end = player.marbles().get(3);
+        assertFalse(player.safeBoard().isComplete());
+        assertNull(game.board().legalMove(end, 2));
+        for (int i = 3; i >= 0; i--) {
+            game.board().apply(game.board().legalMove(player.marbles().get(i), 1));
+        }
+        assertTrue(player.safeBoard().isComplete());
+        assertEquals(GameBoard.FINISH, end.position());
+        assertNull(game.board().legalMove(end, 1));
+    }
+
+    @Test
     void completedPlayerMovesTeammateAndTeamWinsWhenBothFinish() {
         Game game = game(1);
         game.joinGame("Human", "p0");
         for (int i = 0; i < 4; i++) {
-            place(game, 0, i, 54 + i);
-            place(game, 2, i, i == 0 ? 53 : 54 + i);
+            place(game, 0, i, 53 + i);
+            place(game, 2, i, i == 0 ? 52 : 53 + i);
         }
         game.advanceRoll();
         assertEquals(2, game.marbleOwner().seat());
@@ -109,18 +195,35 @@ class GameRulesTest {
     }
 
     @Test
-    void penaltyUsesFurthestMarbleIncludingSafeLaneForAssistedPlay() {
+    void teammatePenaltyUsesFurthestTrackMarbleWhileSafeMarblesStayProtected() {
         Game game = game(6, 6, 6);
         for (int i = 0; i < 4; i++) {
-            place(game, 0, i, 54 + i);
+            place(game, 0, i, 53 + i);
         }
-        Marble partner = place(game, 2, 0, 56);
+        Marble protectedMarble = place(game, 2, 0, GameBoard.FINISH);
         place(game, 2, 1, 5);
+        Marble furthestTrack = place(game, 2, 2, 31);
         rollAndPlay(game, 1);
         rollAndPlay(game, 1);
         assertPenalty(game);
-        assertEquals(GameBoard.HOME, partner.position());
+        assertEquals(GameBoard.FINISH, protectedMarble.position());
+        assertEquals(GameBoard.HOME, furthestTrack.position());
+        assertEquals(17, game.players[2].marbles().get(1).position());
         assertTrue(game.players[0].safeBoard().isComplete());
+    }
+
+    @Test
+    void secondTeamCanWinWithAnExactSafeLaneMove() {
+        Game game = Game.headless(ignored -> 1, 1, 800);
+        for (int i = 0; i < 4; i++) {
+            place(game, 1, i, GameBoard.SAFE_START + 1 + i);
+            place(game, 3, i, GameBoard.SAFE_START + (i == 0 ? i : 1 + i));
+        }
+        game.advanceRoll();
+        assertEquals(3, game.marbleOwner().seat());
+        game.playAction(0);
+        assertEquals(1, game.winningTeam());
+        assertEquals(2, game.getWinningTeam().size());
     }
 
     @Test
@@ -155,7 +258,7 @@ class GameRulesTest {
         Marble marble = place(game, 0, 0, 50);
         Marble blocker = place(game, 0, 1, 52);
         assertNull(game.board().legalMove(marble, 3));
-        game.board().relocate(blocker, 57);
+        game.board().relocate(blocker, GameBoard.FINISH);
         assertEquals(52, game.board().legalMove(marble, 2).destination());
         assertNull(game.board().legalMove(blocker, 1));
         game.board().relocate(marble, 55);
@@ -187,7 +290,7 @@ class GameRulesTest {
             assertEquals(1, actual[actions + 5]);
             assertEquals(1f / 12, actual[actions + 8]); // Other opponent can capture on a 2.
             assertEquals(0, actual[actions + 9]);
-            assertEquals(2f / 6, actual[actions + 18 + 3]);
+            assertEquals(2f / SafeBoard.LENGTH, actual[actions + 18 + 3]);
             expected = actual;
         }
     }

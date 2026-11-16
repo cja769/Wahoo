@@ -5,9 +5,10 @@ import com.jay.wahoo.GameBoard;
 import com.jay.wahoo.GameBoard.LegalMove;
 import com.jay.wahoo.Marble;
 import com.jay.wahoo.Player;
+import com.jay.wahoo.SafeBoard;
 
 public final class Decision {
-    public static final int SCHEMA = 1;
+    public static final int SCHEMA = 3;
     public static final int SIZE = 123;
     static final int ACTION_OFFSET = 87;
     static final int ACTION_FEATURES = 9;
@@ -133,7 +134,7 @@ public final class Decision {
     }
 
     private static float safeSlot(int position) {
-        return position >= GameBoard.SAFE_START ? (position - GameBoard.SAFE_START + 1) / 6f : 0;
+        return position >= GameBoard.SAFE_START ? (position - GameBoard.SAFE_START + 1) / (float) SafeBoard.LENGTH : 0;
     }
 
     public static float progress(int position) {

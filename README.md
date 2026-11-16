@@ -10,14 +10,59 @@ headless simulations.
 Use JDK 17 and Node.js. From the repository root:
 
 ```sh
-(cd backend && bash gradlew test bootJar)
-(cd frontend && npm ci && npm start)
+(cd frontend && npm ci && npm test -- --watchAll=false && npm run build)
+(cd backend && bash gradlew test bootJar -PfrontendBuildDir="$PWD/../frontend/build")
 java -jar backend/build/libs/wahoo-0.0.1-SNAPSHOT.jar
 ```
 
 The backend listens on port 8081 by default. The old NEAT-only network and
 training endpoints return HTTP 410. Training runs offline using the commands
 below. A Java heuristic chooses legal moves when no model is configured.
+
+## Deploy to Render
+
+The root Dockerfile builds React and packages its static assets into the Java
+jar. The UI, API, and SockJS endpoint share one HTTPS origin. For local frontend
+development, the React dev server proxies API and WebSocket traffic to port
+8081.
+
+Create a Render Web Service from this repository, choose **Docker** and the
+**Free** instance, and use `/actuator/health` for the health check. The
+`render.yaml` blueprint contains the same defaults. Java reads Render's `PORT`
+and the image caps Java heap at 256 MiB. The free service may need to wake up
+before loading the page. Games and seats are in memory and reset on a restart.
+
+In the lobby, choose an AI model and select **Create Game**. Join that game
+and claim an available seat. Opposite seats are teammates, and bots fill any
+unclaimed seats when the game starts. The Docker image loads the approved
+five-space actor and exposes an earlier actor trained under the same rules
+for comparison. See [the experiment](training/EXPERIMENT.md) for the exact
+checkpoints and their results. When running the jar outside Docker, set
+`WAHOO_POLICY_PATH` to load an approved model and
+`WAHOO_PREVIEW_POLICY_PATH` to expose an optional comparison model. The Java
+heuristic is the default if no approved model is configured. Training runs
+offline.
+
+## Game rules
+
+- Each color's safe lane has five positions. Slot 0 is the entrance and
+  slots 1–4 are the four finishing positions. Moves must land exactly on
+  the lane without passing another marble of the same color.
+- A one or a six can bring a marble out of its starting area. A move on the
+  main track can jump other colors and sends a different-color marble home
+  if it lands on that marble.
+- If there is a legal move, the player must make one. A non-six roll ends
+  the turn after that move or immediately if there is no legal move.
+- Rolling a six grants another roll. The player must first make a legal move
+  when one is available. Sixes count toward the streak even when no move is
+  available.
+- Each third consecutive six sends the furthest marble of the active color
+  on the main track back to its starting area. Safe and home marbles are
+  protected. The streak resets and the same player rolls again, even when
+  there was no eligible marble.
+- After filling all four finishing positions, a player controls their
+  teammate's marbles. The same movement and six-penalty rules apply to that
+  color. A team wins after both colors finish all four marbles.
 
 ## Train on CPU or GPU
 
@@ -32,7 +77,8 @@ source .venv/bin/activate
 python -m pip install 'torch==2.7.1+cpu' --index-url https://download.pytorch.org/whl/cpu
 python -m pip install -r training/requirements.txt
 python -m pytest -q training
-python -m training.train --run runs/wahoo --steps 500000
+python -m training.train --run runs/five-space-v3 --epochs 4 --seed 104729 \
+  --steps 20971520 --checkpoint-every 1048576
 ```
 
 `--device cuda` enables PyTorch CUDA when a matching build is installed.
@@ -53,12 +99,12 @@ each marble's home, track and safe positions, progress, and exposure to the
 opponents' possible next rolls. Legal action features describe the destination,
 progress, captures, and destination exposure if the opposing colors moved
 from the resulting board. The seat order and track positions are relative to
-the actor. Java forbids passing one's own color, uses exact safe-lane moves,
-and sends the furthest marble of the color in play home on each third six,
-including marbles already in the safe lane. A third-six penalty is followed
-by another roll. A normal roll with zero legal moves ends the turn.
+the actor. Rules schema 3 encodes the shorter safe lane and its new
+normalization. Java inference and training resume reject older schemas. Keep
+the older checkpoints for reference and start a fresh run for these rules.
 
-The learner controls both teammates and alternates teams and starting seats.
+The learner controls both teammates, alternates teams by environment, and
+samples starting seats uniformly from each environment's seeded stream.
 Opponents include seeded random legal moves, a capture and safety heuristic,
 recent and older frozen PPO snapshots, and the incumbent when one has passed
 the benchmark. A team win pays +1, a loss pays -1, and an unfinished game
@@ -73,7 +119,8 @@ can discard work since the last completed checkpoint. Only one writer can
 train or promote in a run directory at a time.
 
 ```sh
-python -m training.train --run runs/wahoo --resume --steps 500000
+python -m training.train --run runs/five-space-v3 --epochs 4 --seed 104729 \
+  --resume --steps 500000 --checkpoint-every 1048576
 ```
 
 `--steps` adds that many decisions, rounded up to a complete PPO rollout.
@@ -84,7 +131,7 @@ In-flight episodes and partial rollout buffers are discarded. Keep
 `step-*.wah` files to preserve the historical opponents. Each `.zip` is a
 trusted Python training checkpoint and its matching `.wah` is an inference
 actor. `metrics.jsonl` records decisions and rolls per second, episode
-statistics, and PPO diagnostics.
+statistics, mean reward, and PPO diagnostics.
 
 ## Benchmark and deploy
 
@@ -92,10 +139,10 @@ For example, evaluate a candidate against random, heuristic, an older
 checkpoint, and the incumbent when present:
 
 ```sh
-python -m training.benchmark runs/wahoo/step-000000503808.zip \
-  --opponent runs/wahoo/step-000000032768.wah \
-  --run runs/wahoo --pairs 512 --seed 20270101 \
-  --report runs/wahoo/evaluation.json --promote
+python -m training.benchmark runs/five-space-v3/step-000020971520.zip \
+  --opponent runs/five-space-v3/step-000004194304.wah \
+  --run runs/five-space-v3 --pairs 1024 --seed 20270110 \
+  --report runs/five-space-v3/evaluation.json --promote
 ```
 
 The benchmark defaults to 512 mirrored pairs per opponent. Every pair uses
@@ -118,7 +165,7 @@ actor in place.
 Deploy the approved actor by passing its path at Java startup:
 
 ```sh
-WAHOO_POLICY_PATH="$(pwd)/runs/wahoo/best.wah" \
+WAHOO_POLICY_PATH="$(pwd)/runs/five-space-v3/best.wah" \
   java -jar backend/build/libs/wahoo-0.0.1-SNAPSHOT.jar
 ```
 
@@ -126,6 +173,7 @@ The `.wah` binary stores a versioned copy of the PPO actor's two Linear/Tanh
 layers and output layer. Java loads the weights once, applies the shared
 observation schema, and picks the highest-scoring legal action. A configured
 file that fails format or schema validation fails startup. Gameplay needs
-only Java and the built frontend assets.
+only Java and the built frontend assets. Check `/actuator/health` after a
+deploy and compare the actor hashes in `/api/bots` with the benchmark reports.
 
-See the [bounded experiment](training/EXPERIMENT.md) for measurements and reproduction commands.
+See the [training results](training/EXPERIMENT.md) for measurements and reproduction commands.

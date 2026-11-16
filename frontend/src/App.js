@@ -1,7 +1,7 @@
 import './App.css';
 import Board from "./components/Board";
 import Home from "./components/Home";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 
 function App() {
     const [playerToken, setPlayerToken] = useState(localStorage.getItem("playerToken"));
@@ -15,14 +15,14 @@ function App() {
         setGameId(gameId);
         setPlayerId(playerId);
     };
-    const clearPlayerState = () => {
+    const clearPlayerState = useCallback(() => {
         localStorage.removeItem("playerToken");
         localStorage.removeItem("gameId");
         localStorage.removeItem("playerId");
         setPlayerToken(null);
         setGameId(null);
         setPlayerId(null);
-    }
+    }, []);
 
     return (
       <div className={'app'}>

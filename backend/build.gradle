@@ -58,3 +58,16 @@ test {
 		events "passed", "skipped", "failed"
 	}
 }
+
+gitProperties {
+	failOnNoGitDirectory = false
+}
+
+tasks.named('processResources') {
+	def frontendBuild = providers.gradleProperty('frontendBuildDir')
+	if (frontendBuild.isPresent()) {
+		from(frontendBuild.get()) {
+			into 'static'
+		}
+	}
+}

@@ -11,7 +11,7 @@ import numpy as np
 from sb3_contrib import MaskablePPO
 import torch
 
-from .bridge import JavaBridge, WahooVecEnv, UNFINISHED
+from .bridge import SCHEMA, JavaBridge, WahooVecEnv, UNFINISHED
 from .checkpoints import actor_layers, atomic_write, export_actor, run_lock, write_json
 
 MIN_PROMOTION_PAIRS = 256
@@ -118,9 +118,14 @@ def evaluate(args, checkpoint, actor, run):
         failures.append("Promotion uses the fixed 800-turn horizon")
 
     report = {
-        "model": str(checkpoint or actor), "actor_sha256": hashlib.sha256(actor.read_bytes()).hexdigest(),
+        "model": (checkpoint or actor).name, "rules_schema": SCHEMA,
+        "actor_sha256": hashlib.sha256(actor.read_bytes()).hexdigest(),
         "seed": args.seed, "pairs_per_opponent": args.pairs,
         "turn_limit": args.turn_limit, "python_java_parity": parity, "matchups": results,
+        "opponent_actor_sha256": {
+            label: hashlib.sha256(opponent.read_bytes()).hexdigest()
+            for label, opponent in matches.items() if isinstance(opponent, Path)
+        },
         "games_per_second": round(len(matches) * len(games) / elapsed, 1),
         "promotion_failures": failures, "promoted": bool(args.promote and not failures),
     }
@@ -155,6 +160,9 @@ def main():
     with TemporaryDirectory(prefix="wahoo-benchmark-") as temporary:
         checkpoint = args.model.resolve() if args.model.suffix == ".zip" else None
         if checkpoint:
+            config_file = checkpoint.parent / "config.json"
+            if not config_file.is_file() or json.loads(config_file.read_text()).get("rules_schema") != SCHEMA:
+                cli.error(f"Checkpoint must be in a training run with rules schema {SCHEMA}")
             actor = Path(temporary) / "candidate.wah"
             export_actor(MaskablePPO.load(checkpoint, device="cpu"), actor)
         else:

@@ -7,6 +7,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,10 +16,12 @@ class DensePolicyTest {
     @TempDir Path directory;
 
     @Test
-    void validatesFormatAndSelectsTheBestLegalAction() throws IOException {
+    void validatesFormatAndSelectsTheBestLegalAction() throws Exception {
         Path actor = directory.resolve("policy.wah");
         writePolicy(actor, Decision.SCHEMA, false);
         DensePolicy policy = DensePolicy.load(actor);
+        assertEquals(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(actor))),
+            policy.sha256());
         float[] input = new float[Decision.SIZE];
         assertArrayEquals(new float[] {0, 1, 2, 3}, policy.logits(input));
         assertEquals(3, policy.choose(input, 15));

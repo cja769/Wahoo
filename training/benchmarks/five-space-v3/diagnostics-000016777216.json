@@ -1,0 +1,70 @@
+{
+  "model": "step-000016777216.zip",
+  "rules_schema": 3,
+  "actor_sha256": "a0e5c0fff7ede2dfe00e02ab9eafd63a05f0a5c5fd61a12cfa8d04d89719c2b4",
+  "seed": 20270108,
+  "pairs_per_opponent": 512,
+  "turn_limit": 800,
+  "python_java_parity": {
+    "decisions": 384,
+    "max_logit_error": 2.384185791015625e-06
+  },
+  "matchups": {
+    "random": {
+      "games": 1024,
+      "wins": 1012,
+      "losses": 12,
+      "unfinished": 0,
+      "win_rate": 0.98828125,
+      "win_rate_ci95": [
+        0.9814453125,
+        0.994140625
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 382.447265625,
+      "mean_rolls": 458.494140625,
+      "mean_completed": 7.9833984375,
+      "mean_opponent_completed": 2.046875
+    },
+    "heuristic": {
+      "games": 1024,
+      "wins": 519,
+      "losses": 505,
+      "unfinished": 0,
+      "win_rate": 0.5068359375,
+      "win_rate_ci95": [
+        0.4775390625,
+        0.5361328125
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 417.6767578125,
+      "mean_rolls": 500.8173828125,
+      "mean_completed": 6.7578125,
+      "mean_opponent_completed": 6.6533203125
+    },
+    "checkpoint/step-000012582912.wah": {
+      "games": 1024,
+      "wins": 530,
+      "losses": 494,
+      "unfinished": 0,
+      "win_rate": 0.517578125,
+      "win_rate_ci95": [
+        0.48828125,
+        0.546875
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 442.611328125,
+      "mean_rolls": 530.8408203125,
+      "mean_completed": 6.734375,
+      "mean_opponent_completed": 6.5419921875
+    }
+  },
+  "opponent_actor_sha256": {
+    "checkpoint/step-000012582912.wah": "edae332e0001b208e9dbcb23b8aafff7ccfbd9082d7491a9a02091dfd66672d5"
+  },
+  "games_per_second": 962.9,
+  "promotion_failures": [
+    "heuristic: lower 95% win-rate bound must exceed 50%"
+  ],
+  "promoted": false
+}

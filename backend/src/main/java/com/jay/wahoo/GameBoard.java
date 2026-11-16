@@ -66,16 +66,20 @@ public final class GameBoard {
         relocate(move.marble(), move.destination());
     }
 
-    void sendFurthestHome(Player owner) {
+    boolean sendFurthestTrackMarbleHome(Player owner) {
         Marble furthest = null;
         for (Marble marble : owner.marbles()) {
-            if (marble.position() > HOME && (furthest == null || marble.position() > furthest.position())) {
+            int position = marble.position();
+            if (position > HOME && position < SAFE_START
+                && (furthest == null || position > furthest.position())) {
                 furthest = marble;
             }
         }
-        if (furthest != null) {
-            relocate(furthest, HOME);
+        if (furthest == null) {
+            return false;
         }
+        relocate(furthest, HOME);
+        return true;
     }
 
     private Marble getTrack(Player owner, int position) {

@@ -17,28 +17,28 @@ const PlayerArea = (props) => {
             <div>
                 <Spot marble={getSpotState(boardPositions, 4)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
-                <Spot marble={getSpotState(playerState?.safePositions, 5)} selectMarble={props.selectMarble}/>
+                <Spot empty={true}/>
                 <Spot empty={true}/>
                 <Spot marble={getSpotState(boardPositions, 10)} selectMarble={props.selectMarble}/>
             </div>
             <div>
                 <Spot marble={getSpotState(boardPositions, 3)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
-                <Spot marble={getSpotState(playerState?.safePositions, 4)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={4} safePlayer={props.player} marble={getSpotState(playerState?.safePositions, 4)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
                 <Spot marble={getSpotState(boardPositions, 11)} selectMarble={props.selectMarble}/>
             </div>
             <div>
                 <Spot marble={getSpotState(boardPositions, 2)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
-                <Spot marble={getSpotState(playerState?.safePositions, 3)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={3} safePlayer={props.player} marble={getSpotState(playerState?.safePositions, 3)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
                 <Spot marble={getSpotState(boardPositions, 12)} selectMarble={props.selectMarble}/>
             </div>
             <div>
                 <Spot marble={getSpotState(boardPositions, 1)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
-                <Spot marble={getSpotState(playerState?.safePositions, 2)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={2} safePlayer={props.player} marble={getSpotState(playerState?.safePositions, 2)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
                 <Spot marble={getSpotState(boardPositions, 13)} selectMarble={props.selectMarble}/>
             </div>

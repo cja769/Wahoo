@@ -1,0 +1,85 @@
+{
+  "model": "step-000020971520.zip",
+  "rules_schema": 3,
+  "actor_sha256": "3acfdf526102a49fe6eaeea5e6960ab32777b7b16438e262f793ca0756d21491",
+  "seed": 20270111,
+  "pairs_per_opponent": 4096,
+  "turn_limit": 800,
+  "python_java_parity": {
+    "decisions": 384,
+    "max_logit_error": 1.9073486328125e-06
+  },
+  "matchups": {
+    "random": {
+      "games": 8192,
+      "wins": 8095,
+      "losses": 97,
+      "unfinished": 0,
+      "win_rate": 0.9881591796875,
+      "win_rate_ci95": [
+        0.9857177734375,
+        0.9903564453125
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 373.4783935546875,
+      "mean_rolls": 448.2218017578125,
+      "mean_completed": 7.9803466796875,
+      "mean_opponent_completed": 2.0267333984375
+    },
+    "heuristic": {
+      "games": 8192,
+      "wins": 4516,
+      "losses": 3676,
+      "unfinished": 0,
+      "win_rate": 0.55126953125,
+      "win_rate_ci95": [
+        0.541259765625,
+        0.5611572265625
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 408.087890625,
+      "mean_rolls": 489.8077392578125,
+      "mean_completed": 6.7977294921875,
+      "mean_opponent_completed": 6.5693359375
+    },
+    "checkpoint/step-000004194304.wah": {
+      "games": 8192,
+      "wins": 4872,
+      "losses": 3320,
+      "unfinished": 0,
+      "win_rate": 0.5947265625,
+      "win_rate_ci95": [
+        0.5848358154296875,
+        0.604736328125
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 428.905517578125,
+      "mean_rolls": 514.770751953125,
+      "mean_completed": 6.9342041015625,
+      "mean_opponent_completed": 6.3172607421875
+    },
+    "incumbent": {
+      "games": 8192,
+      "wins": 4191,
+      "losses": 4001,
+      "unfinished": 0,
+      "win_rate": 0.5115966796875,
+      "win_rate_ci95": [
+        0.50146484375,
+        0.5218505859375
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 435.6475830078125,
+      "mean_rolls": 522.879150390625,
+      "mean_completed": 6.6685791015625,
+      "mean_opponent_completed": 6.5731201171875
+    }
+  },
+  "opponent_actor_sha256": {
+    "checkpoint/step-000004194304.wah": "6f0aff52069cb3e5c4b6635de8e4c7d3bc79c035bed1938532267da85be46819",
+    "incumbent": "edae332e0001b208e9dbcb23b8aafff7ccfbd9082d7491a9a02091dfd66672d5"
+  },
+  "games_per_second": 940.7,
+  "promotion_failures": [],
+  "promoted": true
+}

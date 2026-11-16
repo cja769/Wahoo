@@ -32,3 +32,78 @@
 .player-name-spacer {
     width : 175px;
 }
+.game-board {
+    --cell: min(35px, 6.30vw);
+}
+
+.game-board .board-middle {
+    margin-block: calc(-2 * var(--cell) / 7);
+}
+
+.game-board .player-name {
+    width: min(180px, 32vw);
+    overflow-wrap: anywhere;
+}
+
+.game-board .player-name-spacer {
+    width: min(175px, 28vw);
+}
+
+.game-board .player-area > div,
+.game-board .middle-area-row {
+    height: var(--cell);
+    white-space: nowrap;
+}
+
+.game-board .player-area-right {
+    margin-left: calc(var(--cell) * 8 / 35);
+}
+
+.game-board .player-area-left {
+    margin-right: calc(var(--cell) * 8 / 35);
+}
+
+.game-board .start-area-left {
+    margin-right: var(--cell);
+}
+
+.game-board .start-area-right {
+    margin-left: var(--cell);
+}
+
+.game-board .start-area-left > div,
+.game-board .start-area-right > div {
+    white-space: nowrap;
+}
+
+.game-board .spot {
+    box-sizing: border-box;
+    width: calc(var(--cell) * 5 / 7);
+    height: calc(var(--cell) * 5 / 7);
+    margin: calc(var(--cell) / 7);
+}
+
+.game-board .die {
+    top: calc(var(--cell) * 12 / 7);
+    left: calc(var(--cell) * 12 / 7);
+    width: calc(var(--cell) * 10 / 7);
+    height: calc(var(--cell) * 10 / 7);
+    animation: die-land 180ms ease-out;
+}
+
+.game-board .die svg {
+    width: 100%;
+    height: 100%;
+}
+
+.turn-status {
+    color: white;
+    margin: 0 8px;
+    text-align: center;
+    min-height: 2.5em;
+}
+
+@keyframes die-land {
+    from { opacity: 0.45; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+}
