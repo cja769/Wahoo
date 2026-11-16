@@ -127,3 +127,5 @@ layers and output layer. Java loads the weights once, applies the shared
 observation schema, and picks the highest-scoring legal action. A configured
 file that fails format or schema validation fails startup. Gameplay needs
 only Java and the built frontend assets.
+
+See the [bounded experiment](training/EXPERIMENT.md) for measurements and reproduction commands.
