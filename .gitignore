@@ -4,3 +4,8 @@ node_modules
 .gradle
 build
 old
+
+__pycache__/
+.pytest_cache/
+.venv/
+runs/

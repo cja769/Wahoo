@@ -1,183 +1,57 @@
 package com.jay.wahoo;
 
-import com.jay.wahoo.neat.Genome;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class Player {
-
     private final List<Marble> marbles;
-    private final SafeBoard safeBoard;
-    private final StartBoard startBoard;
-    private final PlayerBoard playerBoard;
+    private final SafeBoard safeBoard = new SafeBoard();
+    private final StartBoard startBoard = new StartBoard();
+    private final PlayerBoard playerBoard = new PlayerBoard();
+    private final int seat;
     private final String identifier;
+    private final String botName;
     private String name;
     private Player partner;
-    private Genome genome;
-    private Genome originalGenome;
-    private String originalName;
-    @Getter
-    private int correctMoves;
-    @Getter
-    private int incorrectMoves;
-    @Getter
-    private List<Integer> diceRolls = new ArrayList<>();
-    @Getter
-    @Setter
-    private boolean useDiceRolls;
-    @Getter
-    private int noMoves;
-    @Getter
-    private int teamKill;
-    @Getter int opponentKill;
-    @Getter
-    private int fitness;
+    private boolean human;
 
-    public Player(Genome genome, Integer identifier, String name) {
-        this.genome = genome;
-        this.name = name;
-        this.originalGenome = genome;
-        this.originalName = name;
-        this.identifier = "p" + identifier;
-        this.marbles = new ArrayList<>();
-        this.safeBoard = new SafeBoard(this);
-        this.startBoard = new StartBoard();
-        this.playerBoard = new PlayerBoard();
-        this.playerBoard.setPlayer(this);
+    public Player(int seat) {
+        this.seat = seat;
+        identifier = "p" + seat;
+        botName = "CPU " + (seat + 1);
+        name = botName;
+        List<Marble> initialMarbles = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             Marble marble = new Marble(this, i);
-            marbles.add(marble);
-            startBoard.addToBoard(marble);
+            initialMarbles.add(marble);
+            startBoard.add(marble);
         }
-    }
-
-    public Integer popDiceRoll() {
-        return this.diceRolls.remove(diceRolls.size() - 1);
-    }
-
-    public void setDiceRolls(List<Integer> diceRolls) {
-        this.diceRolls = diceRolls;
-        this.useDiceRolls = true;
-    }
-    public void addDiceRoll(int diceRoll) {
-        getDiceRolls().add(diceRoll);
-    }
-
-    public void addCorrectMove() {
-        correctMoves++;
-    }
-
-    public void addIncorrectMove() {
-        incorrectMoves++;
-    }
-
-    public void incrementFitness(int amountToAdd) {
-        fitness += amountToAdd;
-    }
-
-    public void decrementFitness(int amountToRemove) {
-        fitness -= amountToRemove;
-    }
-
-    public void addNoMove() {
-        if (shouldCountNoMove()) {
-            noMoves++;
-        }
-    }
-
-    public void addTeammateKill() {
-        if (shouldCountKill()) {
-            teamKill++;
-        }
-    }
-
-    public void addOpponentKill() {
-        if (shouldCountKill()) {
-            opponentKill++;
-        }
-    }
-
-    private boolean shouldCountNoMove() {
-        boolean hasHadChanceToGetOut = correctMoves > 0 || incorrectMoves > 0;
-        boolean hasLessThanThreeMarblesHome = safeBoard.getNumberOfMarblesComplete() < 3;
-        return hasHadChanceToGetOut && hasLessThanThreeMarblesHome;
-    }
-
-    private boolean shouldCountKill() {
-        return safeBoard.getNumberOfMarblesComplete() < 3;
-    }
-
-    public Double getValidMovePercentage() {
-        return correctMoves / (correctMoves + incorrectMoves + .0);
-    }
-
-    public Double getOverallMovePercentage() {
-        return correctMoves / (correctMoves + incorrectMoves + noMoves + .0);
+        marbles = List.copyOf(initialMarbles);
     }
 
     public void makeHuman(String name) {
         this.name = name;
-        this.genome = null;
+        human = true;
     }
 
     public void makeBot() {
-        this.name = this.originalName;
-        this.genome = this.originalGenome;
+        name = botName;
+        human = false;
     }
 
-    public String getName() {
-        return  name;
-    }
+    public String getName() { return name; }
+    public boolean isHuman() { return human; }
+    public int seat() { return seat; }
+    public int team() { return seat % 2; }
+    public String identifier() { return identifier; }
+    public Player partner() { return partner; }
+    public List<Marble> marbles() { return marbles; }
+    public SafeBoard safeBoard() { return safeBoard; }
+    public StartBoard startBoard() { return startBoard; }
+    public PlayerBoard playerBoard() { return playerBoard; }
 
-    public Genome genome() {
-        return genome;
-    }
-
-    public boolean isHuman() {
-        return genome == null;
-    }
-
-    public void setPartner(Player partner) {
+    void setPartner(Player partner) {
         this.partner = partner;
-    }
-
-    public Player partner() {
-        return partner;
-    }
-
-    public String identifier() {
-        return identifier;
-    }
-
-    public List<Marble> marbles() {
-        return marbles;
-    }
-
-    public SafeBoard safeBoard() {
-        return safeBoard;
-    }
-
-    public StartBoard startBoard() {
-        return startBoard;
-    }
-
-    public PlayerBoard playerBoard() {
-        return playerBoard;
-    }
-
-    public boolean isTeammate(Player p) {
-        return partner.equals(p);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Player other) {
-            return identifier().equals(other.identifier());
-        }
-        return false;
     }
 
     public static class PlayerState {
@@ -214,8 +88,4 @@ public class Player {
         }
     }
 
-    @Override
-    public String toString() {
-        return identifier;
-    }
 }

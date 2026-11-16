@@ -1,45 +1,29 @@
 package com.jay.wahoo;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
 public class Marble {
-
     private final Player player;
-    private final Integer identifier;
-    private int distance;
+    private final int identifier;
+    private int position = GameBoard.HOME;
 
-    public void incrementDistance(int increment) {
-        distance += increment;
-    }
-
-    public void resetDistance() {
-        distance = 0;
-    }
-
-    public int distance() {
-        return distance;
+    public Marble(Player player, int identifier) {
+        this.player = player;
+        this.identifier = identifier;
     }
 
     public Player player() {
         return player;
     }
 
-    public Integer identifier() {
+    public int identifier() {
         return identifier;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof  Marble) {
-            Marble other = (Marble) obj;
-            return identifier().equals(other.identifier()) && player.equals(other.player());
-        }
-        return false;
+    // Distance from this marble's start, with safe slots following the track.
+    public int position() {
+        return position;
     }
 
-    public boolean isSameTeam(Marble m) {
-        return player.isTeammate(m.player);
+    void setPosition(int position) {
+        this.position = position;
     }
-
 }
