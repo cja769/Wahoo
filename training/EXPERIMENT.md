@@ -1,5 +1,29 @@
 # Wahoo PPO training experiments
 
+
+## Competitive continuation and current actor
+
+The original 20,971,520-decision checkpoint was continued for 10,485,760
+decisions with the standard opponent pool. The strongest candidate from that
+run won 49.91% of 16,384 held-out games against the incumbent.
+
+A second run started from the same checkpoint and spent 75% of its games
+against PPO opponents, 20% against the heuristic, and 5% against random
+play. The 23,068,672-decision checkpoint led the development matchups. The
+run completed 25,165,824 decisions in total. Its selected checkpoint won
+54.31% against the incumbent on 8,192 unseen mirrored pairs using seed
+20270131. The paired 95% confidence interval was 53.61–55.00%.
+
+| Opponent | Wins/games | Win rate | Paired 95% CI |
+| --- | ---: | ---: | ---: |
+| 20.97M PPO | 8,898/16,384 | 54.31% | 53.61–55.00% |
+| Corrected heuristic | 8,966/16,384 | 54.72% | 54.02–55.43% |
+| Random legal play | 16,242/16,384 | 99.13% | 98.99–99.27% |
+
+The 23,068,672-decision actor is the promoted `models/best.wah`. Python and
+Java agreed on all 384 parity decisions. See the
+[held-out report](benchmarks/five-space-competitive/held-out-incumbent.json).
+
 ## Five-space rules, schema 3
 
 A fresh Maskable PPO run completed **20,971,520 learner decisions**
@@ -29,7 +53,7 @@ balanced seats. Median PPO approximate KL was 0.0032 and the median clip
 fraction was 2.7% between those checkpoints. Training continued with the
 same configuration through the scheduled cutoff.
 
-`models/best.wah` is the approved **20,971,520-decision** actor. Python and Java chose the same legal action in all 384 parity checks. `models/preview.wah` uses the 4,194,304-decision actor.
+This experiment originally promoted the **20,971,520-decision** actor. Python and Java chose the same legal action in all 384 parity checks. `models/preview.wah` uses the 4,194,304-decision actor.
 
 ### Interim checkpoint at 12,582,912 decisions
 
