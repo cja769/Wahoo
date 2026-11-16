@@ -4,33 +4,19 @@ import com.jay.wahoo.Player.PlayerState.MarblePosition;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-public interface ContainingBoard extends Board {
-    default boolean contains(Marble m) {
-        return findMarblePosition(m).isPresent();
-    }
+public interface ContainingBoard {
+    Marble[] getArea();
 
-    default Optional<Integer> findMarblePosition(Marble m) {
-        for (int i = 0; i < getArea().length; i++) {
-            if (getArea()[i] != null && getArea()[i].equals(m)) {
-                return Optional.of(i);
-            }
-        }
-        return Optional.empty();
-    }
-
-    default List<MarblePosition> getState(List<Marble> isMovable) {
+    default List<MarblePosition> getState(List<Marble> movable) {
         List<MarblePosition> positions = new ArrayList<>();
-        for (int i = 0; i < getArea().length; i++) {
-            if (getArea()[i] != null) {
-                positions.add(MarblePosition.from(getArea()[i], isMovable.contains(getArea()[i]), i));
+        Marble[] area = getArea();
+        for (int i = 0; i < area.length; i++) {
+            Marble marble = area[i];
+            if (marble != null) {
+                positions.add(MarblePosition.from(marble, movable.contains(marble), i));
             }
         }
         return positions;
     }
-
-    int getMarblePositionOnTable(Marble marble);
-
-    Marble[] getArea();
 }

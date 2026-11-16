@@ -3,6 +3,7 @@ package com.jay.wahoo.service;
 import com.jay.wahoo.Game;
 import com.jay.wahoo.Game.GameState;
 import com.jay.wahoo.Player;
+import com.jay.wahoo.ai.Policy;
 import com.jay.wahoo.controller.dto.JoinableGameList;
 import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.dto.GameSummary.GameEndReason;
@@ -13,20 +14,21 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class GameService {
 
-    private Map<String, Game> gameMap = new HashMap<>();
-    private Map<String, GameState> finishedGames = new HashMap<>();
+    private final Map<String, Game> gameMap = new ConcurrentHashMap<>();
+    private final Map<String, GameState> finishedGames = new ConcurrentHashMap<>();
+    private final Set<String> activeLoops = ConcurrentHashMap.newKeySet();
     private static final int TTL_DAYS = 1;
     private final SimpMessagingTemplate template;
-    private final PoolService poolService;
+    private final Policy computerPolicy;
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.HOURS)
     public void pruneMaps() {
@@ -40,16 +42,21 @@ public class GameService {
     }
 
     public GameSummary endGame(Game game, String losingPlayerId, GameEndReason reason) {
-        gameMap.remove(game.identifier);
-        Player player = Arrays.stream(game.players)
-            .filter(p -> !p.identifier().equals(losingPlayerId) && !p.partner().identifier().equals(losingPlayerId))
-            .findFirst()
-            .get();
-        GameState summary = new GameState(game, player.identifier(), reason);
-        finishedGames.put(summary.gameId, summary);
-        sendGameStateUpdate(summary);
-        return summary;
+        synchronized (game) {
+            if (!gameMap.remove(game.identifier, game)) {
+                return finishedGames.get(game.identifier);
+            }
+            Player player = Arrays.stream(game.players)
+                .filter(p -> !p.identifier().equals(losingPlayerId) && !p.partner().identifier().equals(losingPlayerId))
+                .findFirst()
+                .orElseThrow();
+            GameState summary = new GameState(game, player.identifier(), reason);
+            finishedGames.put(summary.gameId, summary);
+            sendGameStateUpdate(summary);
+            return summary;
+        }
     }
+
     public GameSummary endGame(Game game, GameEndReason status) {
         gameMap.remove(game.identifier);
         GameState summary = new GameState(game, game.getWinningTeam().get(0).identifier(), status);
@@ -64,8 +71,8 @@ public class GameService {
             .toList();
     }
 
-    public Game createGame() throws IOException {
-        Game game = new Game(poolService.getPlayersFromPool());
+    public Game createGame() {
+        Game game = new Game(computerPolicy);
         gameMap.put(game.identifier, game);
         sendGameStateUpdate(game);
         return game;
@@ -76,15 +83,19 @@ public class GameService {
     }
 
     public Game joinGame(Game game, String playerName, String playerId) {
-        game.joinGame(playerName, playerId);
-        sendGameStateUpdate(game);
-        return game;
+        synchronized (game) {
+            game.joinGame(playerName, playerId);
+            sendGameStateUpdate(game);
+            return game;
+        }
     }
 
     public Game leaveGame(Game game, String playerId) {
-        game.leaveGame(playerId);
-        sendGameStateUpdate(game);
-        return game;
+        synchronized (game) {
+            game.leaveGame(playerId);
+            sendGameStateUpdate(game);
+            return game;
+        }
     }
 
     public Optional<GameState> getFinishedGame(String gameId) {
@@ -92,33 +103,68 @@ public class GameService {
     }
 
     public void startGameLoop(Game game) {
-        Mono.defer(() -> {
-            while (!game.awaitingHumanMove) {
-                GameState state = game.next();
-                if (state.gameComplete) {
-                    sendGameStateUpdate(endGame(game, GameEndReason.GAME_OVER));
-                    break;
-                } else {
+        synchronized (game) {
+            if (game.awaitingHumanMove || !gameMap.containsKey(game.identifier)
+                || !activeLoops.add(game.identifier)) {
+                return;
+            }
+        }
+        Mono.fromRunnable(() -> runGameLoop(game))
+            .subscribeOn(Schedulers.boundedElastic()).subscribe();
+    }
+
+    private void runGameLoop(Game game) {
+        try {
+            while (true) {
+                boolean computerMove;
+                synchronized (game) {
+                    if (!gameMap.containsKey(game.identifier)) {
+                        activeLoops.remove(game.identifier);
+                        return;
+                    }
+                    GameState state = game.next();
+                    if (state.gameComplete) {
+                        endGame(game, GameEndReason.GAME_OVER);
+                        activeLoops.remove(game.identifier);
+                        return;
+                    }
                     sendGameStateUpdate(state);
-                    if (!game.awaitingHumanMove) {
-                        if (game.awaitingComputerMove) {
-                            sleep(600);
+                    if (game.awaitingHumanMove) {
+                        // Release before a human action can enter the game and restart its loop.
+                        activeLoops.remove(game.identifier);
+                        return;
+                    }
+                    computerMove = game.awaitingComputerMove;
+                }
+                if (computerMove) {
+                    sleep(600);
+                    synchronized (game) {
+                        if (gameMap.containsKey(game.identifier)) {
                             sendGameStateUpdate(game.moveComputer());
-                            sleep(600);
-                        } else {
-                            sleep(1200);
                         }
                     }
+                    sleep(600);
+                } else {
+                    sleep(1200);
                 }
             }
-            return Mono.empty();
-        }).subscribeOn(Schedulers.boundedElastic()).subscribe();
+        } catch (RuntimeException error) {
+            synchronized (game) {
+                activeLoops.remove(game.identifier);
+            }
+            throw error;
+        }
     }
 
     public Game moveHuman(Game game, String playerId, int marbleId) {
-        game.moveHuman(playerId, marbleId);
-        startGameLoop(game);
-        return game;
+        synchronized (game) {
+            if (!gameMap.containsKey(game.identifier)) {
+                throw new IllegalArgumentException("The game has ended");
+            }
+            game.moveHuman(playerId, marbleId);
+            startGameLoop(game);
+            return game;
+        }
     }
 
     private void sendGameStateUpdate(Game game) {
