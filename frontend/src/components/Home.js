@@ -9,7 +9,7 @@ const Home = (props) => {
     })
     const [selectedGame, setSelectedGame] = useState();
     const [disableCreate, setDisableCreate] = useState(false);
-    const [ppoPreview, setPpoPreview] = useState(false);
+    const [bots, setBots] = useState({});
     const [error, setError] = useState(null);
     const [socketClient, setSocketClient] = useState();
     useEffect(() => {
@@ -24,8 +24,8 @@ const Home = (props) => {
     useEffect(() => {
         fetch("/api/bots")
             .then(response => response.ok ? response.json() : {})
-            .then(bots => setPpoPreview(Boolean(bots.ppoPreview)))
-            .catch(() => setPpoPreview(false));
+            .then(setBots)
+            .catch(() => setBots({}));
     }, []);
 
     useEffect(() => {
@@ -83,9 +83,11 @@ const Home = (props) => {
                 <div className={'center'}>
                     <div>
                         <button className={'button'} disabled={disableCreate} onClick={() => createGame()}>Create Game</button>
-                        {ppoPreview && (
+                        {bots.ppoPreview && (
                             <button className={'button'} disabled={disableCreate}
-                                    onClick={() => createGame(true)}>Create Game with PPO Bots</button>
+                                    onClick={() => createGame(true)}>
+                                {bots.ppoDefault ? "Create Game with Earlier PPO Bots" : "Create Game with PPO Bots"}
+                            </button>
                         )}
                     </div>
                 </div>
@@ -100,7 +102,7 @@ const Home = (props) => {
                         }
                         return (
                             <div className={'center'} key={g.gameId} onClick={onClick}>
-                                <span className={'joinable-game'}>{g.ppoPreview ? "PPO bots · " : ""}{g.gameId}</span>
+                                <span className={'joinable-game'}>{g.ppoPreview ? (bots.ppoDefault ? "Earlier PPO bots · " : "PPO bots · ") : ""}{g.gameId}</span>
                             </div>
                         )
                     })

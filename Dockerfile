@@ -14,8 +14,8 @@ RUN bash gradlew --no-daemon bootJar -PfrontendBuildDir=/frontend
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=server-build /backend/build/libs/wahoo-0.0.1-SNAPSHOT.jar ./wahoo.jar
-COPY models/preview.wah ./preview.wah
-ENV PORT=8081 WAHOO_PREVIEW_POLICY_PATH=/app/preview.wah
+COPY models/best.wah models/preview.wah ./
+ENV PORT=8081 WAHOO_POLICY_PATH=/app/best.wah WAHOO_PREVIEW_POLICY_PATH=/app/preview.wah
 EXPOSE 8081
 USER 10001:10001
 ENTRYPOINT ["java", "-Xmx256m", "-jar", "/app/wahoo.jar"]

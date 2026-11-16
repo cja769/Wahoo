@@ -49,3 +49,21 @@ python -m training.benchmark runs/experiment/step-000006291456.zip \
   --run runs/experiment --pairs 512 --seed 20270104 \
   --report runs/experiment/evaluation.json --promote
 ```
+
+
+## Continued training and promotion
+
+Training resumed at 6,291,456 decisions and added 10,485,760, using the same
+configuration and saving every 1,048,576 decisions. The final checkpoint at
+16,777,216 passed the promotion gate on an independent dice seed (20270106).
+Each matchup used 1,024 mirrored seed pairs.
+
+| Opponent | Wins / games | Win rate | Paired 95% CI |
+| --- | ---: | ---: | ---: |
+| Random legal moves | 2,016 / 2,048 | 98.4% | 97.9–98.9% |
+| Capture and safety heuristic | 1,149 / 2,048 | 56.1% | 54.1–58.1% |
+| PPO step 6,291,456 | 1,101 / 2,048 | 53.8% | 51.9–55.7% |
+
+Java and Python agreed on all 384 masked decisions checked during
+promotion. The approved actor is `models/best.wah` and the earlier actor
+remains available as `models/preview.wah`.

@@ -78,6 +78,10 @@ public class GameService {
             .toList();
     }
 
+    public boolean isPpoDefault() {
+        return computerPolicies.defaultPolicy() != Policy.HEURISTIC;
+    }
+
     public boolean isPreviewAvailable() {
         return computerPolicies.preview().isPresent();
     }

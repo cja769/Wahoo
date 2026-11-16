@@ -32,11 +32,12 @@ Create a Render Web Service from this repository, choose **Docker** and the
 and the image caps Java heap at 256 MiB. The free service may need to wake up
 before loading the page. Games and seats are in memory and reset on a restart.
 
-The image includes a PPO playtest actor. **Create Game** uses the default bot
-policy and **Create Game with PPO Bots** opts all computer seats into the
-playtest model. The default is the Java heuristic unless `WAHOO_POLICY_PATH`
-points to an approved model. `WAHOO_PREVIEW_POLICY_PATH` optionally enables the
-preview when running the jar outside Docker. Training runs offline.
+The image runs the approved 16.78M-decision actor by default. **Create Game
+with Earlier PPO Bots** uses the 6.29M-decision checkpoint. When running the
+jar outside Docker, set `WAHOO_POLICY_PATH` to load an approved model and
+`WAHOO_PREVIEW_POLICY_PATH` to expose an optional comparison model. The Java
+heuristic is the default if no approved model is configured. Training runs
+offline.
 
 ## Train on CPU or GPU
 

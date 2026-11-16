@@ -30,7 +30,7 @@ public class MainController {
 
     @GetMapping("/bots")
     public Map<String, Boolean> getBots() {
-        return Map.of("ppoPreview", gameService.isPreviewAvailable());
+        return Map.of("ppoPreview", gameService.isPreviewAvailable(), "ppoDefault", gameService.isPpoDefault());
     }
 
     @GetMapping("/create")
