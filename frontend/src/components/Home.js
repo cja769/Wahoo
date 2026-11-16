@@ -11,15 +11,29 @@ const Home = (props) => {
     const [disableCreate, setDisableCreate] = useState(false);
     const [bots, setBots] = useState({});
     const [error, setError] = useState(null);
-    const [socketClient, setSocketClient] = useState();
+    const [model, setModel] = useState("default");
     useEffect(() => {
-        fetch("/api/games")
-            .then(r => r.json())
-            .then(j => setGames(j));
-        if (!socketClient) {
-            setSocketClient(initSocket('/topic/joinable', message => setGames(JSON.parse(message.body))));
-        }
-    }, [socketClient, setSocketClient]);
+        let active = true;
+        let updates = 0;
+        const loadGames = () => {
+            const revision = updates;
+            fetch("/api/games")
+                .then(response => response.ok ? response.json() : null)
+                .then(lobbies => {
+                    if (active && lobbies && updates === revision) setGames(lobbies);
+                })
+                .catch(() => {});
+        };
+        loadGames();
+        const disconnect = initSocket("/topic/joinable", message => {
+            updates++;
+            setGames(JSON.parse(message.body));
+        }, loadGames);
+        return () => {
+            active = false;
+            disconnect();
+        };
+    }, []);
 
     useEffect(() => {
         fetch("/api/bots")
@@ -35,11 +49,12 @@ const Home = (props) => {
         }
     }, [games, selectedGame]);
 
-    const createGame = async (preview = false) => {
+    const createGame = async (event) => {
+        event.preventDefault();
         setError(null);
         setDisableCreate(true);
         try {
-            const response = await fetch("/api/create" + (preview ? "?ppoPreview=true" : ""));
+            const response = await fetch("/api/create" + (model === "earlier" ? "?ppoPreview=true" : ""));
             if (!response.ok) {
                 throw new Error("Could not create the game. Please try again.");
             }
@@ -80,17 +95,14 @@ const Home = (props) => {
     return (
         <div className={'center'}>
             <div>
-                <div className={'center'}>
-                    <div>
-                        <button className={'button'} disabled={disableCreate} onClick={() => createGame()}>Create Game</button>
-                        {bots.ppoPreview && (
-                            <button className={'button'} disabled={disableCreate}
-                                    onClick={() => createGame(true)}>
-                                {bots.ppoDefault ? "Create Game with Earlier PPO Bots" : "Create Game with PPO Bots"}
-                            </button>
-                        )}
-                    </div>
-                </div>
+                <form className="create-game" onSubmit={createGame}>
+                    <label htmlFor="ai-model">AI model</label>
+                    <select id="ai-model" value={model} onChange={event => setModel(event.target.value)}>
+                        <option value="default">{bots.ppoDefault ? "Strongest approved PPO" : "Heuristic"}</option>
+                        {bots.ppoPreview && <option value="earlier">Earlier PPO checkpoint</option>}
+                    </select>
+                    <button className="button" disabled={disableCreate}>Create Game</button>
+                </form>
                 {error && <p role="alert">{error}</p>}
                 {games.games && games.games?.length !== 0 && (<div className={'center'}>
                     <h2>Join a Game</h2>
@@ -101,8 +113,10 @@ const Home = (props) => {
                             setSelectedGame(g);
                         }
                         return (
-                            <div className={'center'} key={g.gameId} onClick={onClick}>
-                                <span className={'joinable-game'}>{g.ppoPreview ? (bots.ppoDefault ? "Earlier PPO bots · " : "PPO bots · ") : ""}{g.gameId}</span>
+                            <div className="center" key={g.gameId}>
+                                <button className="joinable-game" onClick={onClick}>
+                                    {g.ppoPreview ? "Earlier PPO" : bots.ppoDefault ? "Approved PPO" : "Heuristic"} · {g.gameId.slice(0, 8)}
+                                </button>
                             </div>
                         )
                     })

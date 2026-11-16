@@ -7,6 +7,7 @@ import {getPlayerState} from "../utility/marblePositionHelper";
 import {initSocket} from "../utility/webSocket";
 
 const Board = (props) => {
+    const {gameId, clearPlayerState} = props;
     const originalPlayerOrder = ['p0', 'p1', 'p2', 'p3']
     const index = originalPlayerOrder.indexOf(props.playerId);
     const playerOrder = originalPlayerOrder.slice(index);
@@ -25,65 +26,36 @@ const Board = (props) => {
         rolledThreeSixes : false,
         diceRollUpdated : false
     };
-    const [boardState, setBoardStateInternal] = useState(defaultBoardState)
-    const [diceRoll, setDiceRoll] = useState(0);
-    const [socketClient, setSocketClient] = useState();
-
-    const setBoardState = val => {
-        const updateDiceRoll = count => {
-            if (count === 0) {
-                setDiceRoll(val.currentRoll);
-                if (val.rolledThreeSixes === true) {
-                    setErrorMessage("Player " + val.currentPlayerName + " rolled three sixes!");
-                    setTimeout(() => {
-                        setErrorMessage(null);
-                    }, 3000);
-                    setTimeout(() => {
-                        setBoardStateInternal(val);
-                    }, 300);
-                }
-                return;
-            }
-            setTimeout(() => {
-                let randomRoll = val.currentRoll;
-                while (randomRoll === val.currentRoll) {
-                    randomRoll = Math.floor(Math.random() * 6) + 1;
-                }
-                setDiceRoll(randomRoll);
-                updateDiceRoll(count - 1);
-            }, 75)
-        }
-        setDiceRoll(val.currentRoll);
-        if (val.diceRollUpdated === true) {
-            updateDiceRoll(5);
-        }
-        if (val.rolledThreeSixes === false) {
-            setBoardStateInternal(val);
-        }
-    }
+    const [boardState, setBoardState] = useState(defaultBoardState);
 
     useEffect(() => {
-        if (props.gameId) {
-            fetch("/api/game/" + props.gameId)
+        if (!gameId) return;
+        let active = true;
+        let updates = 0;
+
+        const loadGame = () => {
+            const revision = updates;
+            fetch("/api/game/" + gameId)
                 .then(response => {
-                    if (response.status === 404) {
-                        props.clearPlayerState();
-                    } else if (response.ok) {
-                        return response.json();
-                    }
+                    if (!active || updates !== revision) return null;
+                    if (response.status === 404) clearPlayerState();
+                    return response.ok ? response.json() : null;
                 })
                 .then(state => {
-                    if (state) {
-                        setBoardState(state);
-                    }
-                });
-            if (!socketClient) {
-                setSocketClient(initSocket('/topic/game/' + props.gameId, message => {
-                    setBoardState(JSON.parse(message.body));
-                }));
-            }
-        }
-    }, [props.gameId, socketClient]);
+                    if (active && state && updates === revision) setBoardState(state);
+                })
+                .catch(() => {});
+        };
+        loadGame();
+        const disconnect = initSocket("/topic/game/" + gameId, message => {
+            updates++;
+            setBoardState(JSON.parse(message.body));
+        }, loadGame);
+        return () => {
+            active = false;
+            disconnect();
+        };
+    }, [gameId, clearPlayerState]);
 
     const start = () => {
         setDisableStartButton(true);
@@ -139,7 +111,7 @@ const Board = (props) => {
     }
 
     const selectMarble = (playerId, marbleId) => {
-        if (boardState.awaitingHumanMove === true) {
+        if (boardState.awaitingHumanMove && boardState.currentPlayerId === props.playerId) {
             fetch("/api/play", {
                 method: "POST",
                 headers: {
@@ -171,8 +143,19 @@ const Board = (props) => {
     for (const playerId of playerOrder) {
         playerStates.push(getPlayerState(boardState, playerId));
     }
+    let status = "Waiting to start";
+    if (boardState.endReason) {
+        status = "Winners: " + boardState.winningPlayers.map(player => player.playerName).join(" and ");
+    } else if (boardState.hasStarted) {
+        status = boardState.currentPlayerName + " rolled " + boardState.currentRoll;
+        if (boardState.rolledThreeSixes) {
+            status += boardState.penaltyApplied ? " · Three sixes, marble sent home" : " · Three sixes, no track marble to send home";
+        } else if (boardState.awaitingHumanMove && boardState.currentPlayerId === props.playerId) {
+            status += " · Choose a marble";
+        }
+    }
     return (
-        <>
+        <div className="game-board">
             <div className={'center'}>
                 <div className={boardState.endReason ? 'hidden' : ''}>
                     {boardState.hasStarted &&
@@ -191,6 +174,7 @@ const Board = (props) => {
             <div className={'center'}>
                 <h3 className={"error-text" + (!errorMessage ? ' hidden' : '')}>{errorMessage || "This is a spacing placeholder"}</h3>
             </div>
+            <p className="turn-status" role="status">{status}</p>
             <div className={'center'}>
                 <div className={'center player-name'}>
                     <span>{playerStates[2]?.playerName}</span>
@@ -207,7 +191,7 @@ const Board = (props) => {
             </div>
             <div className={'board-middle'}>
                 <PlayerArea orientation={'left'} boardState={boardState} player={playerOrder[1]} selectMarble={selectMarble}/>
-                <MiddleConnector selectMarble={selectMarble} boardState={boardState} diceRoll={diceRoll} playerOrder={playerOrder}/>
+                <MiddleConnector selectMarble={selectMarble} boardState={boardState} diceRoll={boardState.currentRoll} playerOrder={playerOrder}/>
                 <PlayerArea orientation={'right'} boardState={boardState} player={playerOrder[3]}  selectMarble={selectMarble}/>
                 {boardState.endReason &&
                     <div className={'leave-area'}>
@@ -229,7 +213,7 @@ const Board = (props) => {
                     <span>{playerStates[0]?.playerName}</span>
                 </div>
             </div>
-        </>
+        </div>
     );
 }
 

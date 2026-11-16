@@ -20,7 +20,7 @@ const MiddleConnector = (props) => {
     const diceRoll = props.diceRoll;
     return (
         <div className={'middle-area'}>
-            <div className={'die'}>
+            <div className={'die'} key={props.boardState.rollNumber}>
                 {diceRoll === 1 && <Die1 playerId={props.boardState.currentPlayerId}/>}
                 {diceRoll === 2 && <Die2 playerId={props.boardState.currentPlayerId}/>}
                 {diceRoll === 3 && <Die3 playerId={props.boardState.currentPlayerId}/>}
@@ -30,8 +30,8 @@ const MiddleConnector = (props) => {
             </div>
             <div className={'middle-area-row'}>
                 <Spot marble={getSpotState(playerFour, 0)} selectMarble={props.selectMarble}/>
-                <Spot marble={getSpotState(playerFourState?.safePositions, 0)} selectMarble={props.selectMarble}/>
-                <Spot marble={getSpotState(playerFourState?.safePositions, 1)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={0} safePlayer={playerFourState?.playerId} marble={getSpotState(playerFourState?.safePositions, 0)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={1} safePlayer={playerFourState?.playerId} marble={getSpotState(playerFourState?.safePositions, 1)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
                 <Spot marble={getSpotState(playerOne, 0)} selectMarble={props.selectMarble}/>
             </div>
@@ -40,17 +40,17 @@ const MiddleConnector = (props) => {
                 <Spot empty={true}/>
                 <Spot empty={true}/>
                 <Spot empty={true}/>
-                <Spot marble={getSpotState(playerOneState?.safePositions, 0)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={0} safePlayer={playerOneState?.playerId} marble={getSpotState(playerOneState?.safePositions, 0)} selectMarble={props.selectMarble}/>
             </div>
             <div className={'middle-area-row'}>
-                <Spot marble={getSpotState(playerThreeState?.safePositions, 1)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={1} safePlayer={playerThreeState?.playerId} marble={getSpotState(playerThreeState?.safePositions, 1)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
                 <Spot empty={true}/>
                 <Spot empty={true}/>
-                <Spot marble={getSpotState(playerOneState?.safePositions, 1)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={1} safePlayer={playerOneState?.playerId} marble={getSpotState(playerOneState?.safePositions, 1)} selectMarble={props.selectMarble}/>
             </div>
             <div className={'middle-area-row'}>
-                <Spot marble={getSpotState(playerThreeState?.safePositions, 0)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={0} safePlayer={playerThreeState?.playerId} marble={getSpotState(playerThreeState?.safePositions, 0)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
                 <Spot empty={true}/>
                 <Spot empty={true}/>
@@ -59,8 +59,8 @@ const MiddleConnector = (props) => {
             <div className={'middle-area-row'}>
                 <Spot marble={getSpotState(playerThree, 0)} selectMarble={props.selectMarble}/>
                 <Spot empty={true}/>
-                <Spot marble={getSpotState(playerTwoState?.safePositions, 1)} selectMarble={props.selectMarble}/>
-                <Spot marble={getSpotState(playerTwoState?.safePositions, 0)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={1} safePlayer={playerTwoState?.playerId} marble={getSpotState(playerTwoState?.safePositions, 1)} selectMarble={props.selectMarble}/>
+                <Spot safeSlot={0} safePlayer={playerTwoState?.playerId} marble={getSpotState(playerTwoState?.safePositions, 0)} selectMarble={props.selectMarble}/>
                 <Spot marble={getSpotState(playerTwo, 0)} selectMarble={props.selectMarble}/>
             </div>
         </div>

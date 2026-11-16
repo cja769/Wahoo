@@ -2,14 +2,21 @@ package com.jay.wahoo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jay.wahoo.service.GameService;
+import com.jay.wahoo.ai.Decision;
+import com.jay.wahoo.ai.Policy;
+import com.jay.wahoo.config.PolicyConfig.BotPolicies;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -18,12 +25,21 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = "wahoo.preview-policy.path=../models/preview.wah")
+@SpringBootTest
 @AutoConfigureMockMvc
 class WebGameplayTest {
     @Autowired MockMvc web;
     @Autowired ObjectMapper json;
     @Autowired GameService games;
+
+    @TestConfiguration
+    static class TestPolicies {
+        @Bean
+        @Primary
+        BotPolicies testBotPolicies() {
+            return new BotPolicies(Policy.HEURISTIC, Optional.of(Policy.HEURISTIC));
+        }
+    }
 
     @Test
     void createsAPlayableGameAndPreservesTheHumanJoinAndForfeitContracts() throws Exception {
@@ -61,6 +77,8 @@ class WebGameplayTest {
     void enablesPreviewGamesWithoutChangingTheDefault() throws Exception {
         web.perform(get("/api/bots"))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.rulesSchema").value(Decision.SCHEMA))
+            .andExpect(jsonPath("$.ppoDefault").value(false))
             .andExpect(jsonPath("$.ppoPreview").value(true));
 
         web.perform(get("/api/create"))

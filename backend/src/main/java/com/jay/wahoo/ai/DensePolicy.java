@@ -5,15 +5,21 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 /** Inference-only actor using the exact Linear/Tanh layers exported by training. */
 public final class DensePolicy implements Policy {
     private static final int MAGIC = 0x57414831; // WAH1
     private final Layer[] layers;
+    private final String sha256;
     private final ThreadLocal<float[][]> activations;
 
-    private DensePolicy(Layer[] layers) {
+    private DensePolicy(Layer[] layers, String sha256) {
         this.layers = layers;
+        this.sha256 = sha256;
         activations = ThreadLocal.withInitial(() -> {
             float[][] buffers = new float[layers.length][];
             for (int i = 0; i < layers.length; i++) {
@@ -24,7 +30,14 @@ public final class DensePolicy implements Policy {
     }
 
     public static DensePolicy load(Path path) throws IOException {
-        try (var input = new DataInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException error) {
+            throw new IllegalStateException("SHA-256 unavailable", error);
+        }
+        try (var input = new DataInputStream(new BufferedInputStream(
+            new DigestInputStream(Files.newInputStream(path), digest)))) {
             if (input.readInt() != MAGIC || input.readInt() != Decision.SCHEMA
                 || input.readInt() != Decision.SIZE) {
                 throw new IOException("Incompatible Wahoo policy " + path);
@@ -44,8 +57,12 @@ public final class DensePolicy implements Policy {
             if (input.read() != -1) {
                 throw new IOException("Unexpected trailing data in Wahoo policy " + path);
             }
-            return new DensePolicy(layers);
+            return new DensePolicy(layers, HexFormat.of().formatHex(digest.digest()));
         }
+    }
+
+    public String sha256() {
+        return sha256;
     }
 
     private static float[] readFloats(DataInputStream input, int length) throws IOException {

@@ -1,0 +1,87 @@
+{
+  "model": "step-000020971520.zip",
+  "rules_schema": 3,
+  "actor_sha256": "3acfdf526102a49fe6eaeea5e6960ab32777b7b16438e262f793ca0756d21491",
+  "seed": 20270110,
+  "pairs_per_opponent": 1024,
+  "turn_limit": 800,
+  "python_java_parity": {
+    "decisions": 384,
+    "max_logit_error": 1.9073486328125e-06
+  },
+  "matchups": {
+    "random": {
+      "games": 2048,
+      "wins": 2028,
+      "losses": 20,
+      "unfinished": 0,
+      "win_rate": 0.990234375,
+      "win_rate_ci95": [
+        0.98583984375,
+        0.994140625
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 375.8291015625,
+      "mean_rolls": 451.48876953125,
+      "mean_completed": 7.982421875,
+      "mean_opponent_completed": 2.0556640625
+    },
+    "heuristic": {
+      "games": 2048,
+      "wins": 1138,
+      "losses": 910,
+      "unfinished": 0,
+      "win_rate": 0.5556640625,
+      "win_rate_ci95": [
+        0.53564453125,
+        0.57568359375
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 404.720703125,
+      "mean_rolls": 486.1611328125,
+      "mean_completed": 6.82666015625,
+      "mean_opponent_completed": 6.5556640625
+    },
+    "checkpoint/step-000004194304.wah": {
+      "games": 2048,
+      "wins": 1214,
+      "losses": 834,
+      "unfinished": 0,
+      "win_rate": 0.5927734375,
+      "win_rate_ci95": [
+        0.572265625,
+        0.61328125
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 426.4921875,
+      "mean_rolls": 512.27783203125,
+      "mean_completed": 6.9306640625,
+      "mean_opponent_completed": 6.32373046875
+    },
+    "incumbent": {
+      "games": 2048,
+      "wins": 1054,
+      "losses": 994,
+      "unfinished": 0,
+      "win_rate": 0.5146484375,
+      "win_rate_ci95": [
+        0.4931640625,
+        0.5361328125
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 435.533203125,
+      "mean_rolls": 523.13427734375,
+      "mean_completed": 6.7021484375,
+      "mean_opponent_completed": 6.57763671875
+    }
+  },
+  "opponent_actor_sha256": {
+    "checkpoint/step-000004194304.wah": "6f0aff52069cb3e5c4b6635de8e4c7d3bc79c035bed1938532267da85be46819",
+    "incumbent": "edae332e0001b208e9dbcb23b8aafff7ccfbd9082d7491a9a02091dfd66672d5"
+  },
+  "games_per_second": 850.8,
+  "promotion_failures": [
+    "incumbent: lower 95% win-rate bound must exceed 50%"
+  ],
+  "promoted": false
+}

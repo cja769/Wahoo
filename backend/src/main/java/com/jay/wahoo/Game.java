@@ -37,6 +37,7 @@ public class Game {
     public boolean diceRollUpdated;
     public LocalDateTime lastUpdated;
     public boolean rolledThreeSixes;
+    private boolean penaltyApplied;
 
     public Game(Policy policy, boolean ppoPreview) {
         this(policy, seat -> ThreadLocalRandom.current().nextInt(1, 7), 0, Integer.MAX_VALUE,
@@ -111,13 +112,14 @@ public class Game {
         return state;
     }
 
-    // A roll either opens a mandatory decision, ends the turn, or incurs the third-six penalty.
+    // A roll can open a mandatory decision, reroll, incur a penalty, or end the turn.
     public void advanceRoll() {
         if (legalCount != 0 || isGameComplete()) {
             return;
         }
         gameStarted = true;
         rolledThreeSixes = false;
+        penaltyApplied = false;
         currentPlayer = players[playerPos];
         diceRoll = dice.applyAsInt(playerPos);
         if (diceRoll < 1 || diceRoll > 6) {
@@ -126,7 +128,7 @@ public class Game {
         rolls++;
         diceRollUpdated = true;
         if (diceRoll == 6 && sixCount == 2) {
-            board.sendFurthestHome(marbleOwner());
+            penaltyApplied = board.sendFurthestTrackMarbleHome(marbleOwner());
             sixCount = 0;
             rolledThreeSixes = true;
             return;
@@ -139,7 +141,7 @@ public class Game {
             }
         }
         if (legalCount == 0) {
-            endTurn();
+            finishRoll();
         } else {
             awaitingHumanMove = currentPlayer.isHuman();
             awaitingComputerMove = !awaitingHumanMove;
@@ -182,6 +184,10 @@ public class Game {
         legalCount = 0;
         awaitingHumanMove = false;
         awaitingComputerMove = false;
+        finishRoll();
+    }
+
+    private void finishRoll() {
         if (diceRoll == 6 && winningTeam() < 0) {
             sixCount++;
         } else {
@@ -245,6 +251,8 @@ public class Game {
         public boolean hasStarted;
         public LocalDateTime lastUpdated;
         public boolean rolledThreeSixes;
+        public boolean penaltyApplied;
+        public int rollNumber;
 
         public GameState(Game game) {
             this.hasStarted = !game.isJoinable();
@@ -260,6 +268,8 @@ public class Game {
                 .toList();
             this.lastUpdated = game.lastUpdated;
             this.rolledThreeSixes = game.rolledThreeSixes;
+            this.penaltyApplied = game.penaltyApplied;
+            this.rollNumber = game.rollCount();
             this.diceRollUpdated = game.diceRollUpdated;
         }
 

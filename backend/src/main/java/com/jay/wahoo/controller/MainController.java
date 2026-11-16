@@ -29,12 +29,12 @@ public class MainController {
     }
 
     @GetMapping("/bots")
-    public Map<String, Boolean> getBots() {
-        return Map.of("ppoPreview", gameService.isPreviewAvailable(), "ppoDefault", gameService.isPpoDefault());
+    public Map<String, Object> getBots() {
+        return gameService.botInfo();
     }
 
     @GetMapping("/create")
-    public JoinableGameList create(@RequestParam(defaultValue = "false") boolean ppoPreview) {
+    public JoinableGameList create(@RequestParam(name = "ppoPreview", defaultValue = "false") boolean ppoPreview) {
         gameService.createGame(ppoPreview);
         return getJoinableGames();
     }
@@ -75,7 +75,7 @@ public class MainController {
     }
 
     @GetMapping("/game/{gameId}")
-    public GameSummary getGame(@PathVariable String gameId) {
+    public GameSummary getGame(@PathVariable("gameId") String gameId) {
         return gameService.getGameById(gameId)
             .map(game -> {
                 synchronized (game) {
@@ -87,7 +87,7 @@ public class MainController {
     }
 
     @GetMapping("/start/{id}")
-    public ResponseEntity<Void> start(@PathVariable String id,
+    public ResponseEntity<Void> start(@PathVariable("id") String id,
                                       @RequestHeader(value = "X-Wahoo-Seat", required = false) String token) {
         Game game = gameService.getGameById(id).orElse(null);
         if (game == null) {

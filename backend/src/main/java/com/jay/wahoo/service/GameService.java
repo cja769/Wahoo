@@ -3,6 +3,8 @@ package com.jay.wahoo.service;
 import com.jay.wahoo.Game;
 import com.jay.wahoo.Game.GameState;
 import com.jay.wahoo.Player;
+import com.jay.wahoo.ai.Decision;
+import com.jay.wahoo.ai.DensePolicy;
 import com.jay.wahoo.ai.Policy;
 import com.jay.wahoo.config.PolicyConfig.BotPolicies;
 import com.jay.wahoo.controller.dto.JoinableGameList;
@@ -10,6 +12,7 @@ import com.jay.wahoo.dto.GameSummary;
 import com.jay.wahoo.dto.GameSummary.GameEndReason;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +35,8 @@ public class GameService {
     private static final int TTL_DAYS = 1;
     private final SimpMessagingTemplate template;
     private final BotPolicies computerPolicies;
+    @Value("${wahoo.roll-delay-ms:600}")
+    private int rollDelayMs;
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.HOURS)
     public void pruneMaps() {
@@ -78,12 +83,20 @@ public class GameService {
             .toList();
     }
 
-    public boolean isPpoDefault() {
-        return computerPolicies.defaultPolicy() != Policy.HEURISTIC;
-    }
-
-    public boolean isPreviewAvailable() {
-        return computerPolicies.preview().isPresent();
+    public Map<String, Object> botInfo() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("rulesSchema", Decision.SCHEMA);
+        info.put("ppoDefault", computerPolicies.defaultPolicy() != Policy.HEURISTIC);
+        info.put("ppoPreview", computerPolicies.preview().isPresent());
+        if (computerPolicies.defaultPolicy() instanceof DensePolicy actor) {
+            info.put("ppoDefaultSha256", actor.sha256());
+        }
+        computerPolicies.preview().ifPresent(policy -> {
+            if (policy instanceof DensePolicy actor) {
+                info.put("ppoPreviewSha256", actor.sha256());
+            }
+        });
+        return info;
     }
 
     public Game createGame(boolean preview) {
@@ -158,15 +171,15 @@ public class GameService {
                     computerMove = game.awaitingComputerMove;
                 }
                 if (computerMove) {
-                    sleep(600);
+                    pause(rollDelayMs);
                     synchronized (game) {
                         if (gameMap.containsKey(game.identifier)) {
                             sendGameStateUpdate(game.moveComputer());
                         }
                     }
-                    sleep(600);
+                    pause(rollDelayMs);
                 } else {
-                    sleep(1200);
+                    pause(2L * rollDelayMs);
                 }
             }
         } catch (RuntimeException error) {
@@ -197,10 +210,13 @@ public class GameService {
         template.convertAndSend("/topic/joinable", JoinableGameList.from(getJoinableGames()));
     }
 
-    private void sleep(int time) {
+    private void pause(long millis) {
+        if (millis <= 0) return;
         try {
-            Thread.sleep(time);
-        } catch (InterruptedException e) {}
+            Thread.sleep(millis);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+        }
     }
 
 }

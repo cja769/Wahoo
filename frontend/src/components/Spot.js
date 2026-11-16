@@ -8,6 +8,8 @@ const Spot = (props) => {
     }
     return (
         <span
+            data-safe-slot={props.safeSlot}
+            data-safe-player={props.safePlayer}
             onClick={props.marble?.isMovable === true ? selectMarble : null}
             className={"spot" +
                 (props.empty ? " blank" : "") +
