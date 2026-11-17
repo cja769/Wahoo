@@ -1,0 +1,69 @@
+{
+  "model": "step-000030408704.zip",
+  "candidate_sha256": "d08ec7592ff5283af2aae684059a471f6767fe827da4b7236131cfc17ade00e8",
+  "incumbent_sha256": "d00d56f66c1d3dfeb85c9557aabb0bcba0ad87713789d504c0a6045b99ab2d4f",
+  "seed": 20271124,
+  "pairs_per_matchup": 16384,
+  "scores": {
+    "incumbent": {
+      "games": 32768,
+      "wins": 16664,
+      "losses": 16101,
+      "unfinished": 3,
+      "win_rate": 0.508544921875,
+      "win_rate_ci95": [
+        0.503509521484375,
+        0.51348876953125
+      ],
+      "unfinished_rate": 9.1552734375e-05,
+      "mean_turns": 435.37738037109375,
+      "mean_rolls": 522.4399108886719,
+      "mean_completed": 6.66583251953125,
+      "mean_opponent_completed": 6.600372314453125
+    },
+    "candidate_vs_heuristic": {
+      "games": 32768,
+      "wins": 19238,
+      "losses": 13529,
+      "unfinished": 1,
+      "win_rate": 0.58709716796875,
+      "win_rate_ci95": [
+        0.582061767578125,
+        0.592010498046875
+      ],
+      "unfinished_rate": 3.0517578125e-05,
+      "mean_turns": 405.0048828125,
+      "mean_rolls": 486.0000305175781,
+      "mean_completed": 6.93328857421875,
+      "mean_opponent_completed": 6.42303466796875
+    },
+    "incumbent_vs_heuristic": {
+      "games": 32768,
+      "wins": 19100,
+      "losses": 13668,
+      "unfinished": 0,
+      "win_rate": 0.5828857421875,
+      "win_rate_ci95": [
+        0.577850341796875,
+        0.587799072265625
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 407.7347412109375,
+      "mean_rolls": 489.26824951171875,
+      "mean_completed": 6.922607421875,
+      "mean_opponent_completed": 6.43621826171875
+    }
+  },
+  "paired_heuristic_change": {
+    "difference": 0.00421142578125,
+    "ci95": [
+      -0.002685546875,
+      0.011138916015625
+    ]
+  },
+  "parity": {
+    "decisions": 384,
+    "max_logit_error": 2.86102294921875e-06
+  },
+  "qualifies": true
+}

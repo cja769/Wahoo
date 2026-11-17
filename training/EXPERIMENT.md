@@ -1,7 +1,29 @@
 # Wahoo PPO training experiments
 
 
-## League continuation and current actor
+## 30.41M checkpoint and current actor
+
+Both runs resumed the 27,262,976-decision checkpoint at a learning rate of
+0.0001. The original opponent mix ran for 8,388,608 decisions. A parallel
+4,194,304-decision run moved 15 percentage points of practice from the
+incumbent to the heuristic, raising the heuristic share from 20% to 35%.
+
+The 30,408,704-decision checkpoint from the second run won 50.77% against
+the incumbent on 8,192 new mirrored pairs. With an independent seed and
+16,384 additional mirrored pairs, it won 16,664 of
+32,768 games (50.85%, paired 95% CI
+50.35%–51.35%). The candidate
+and incumbent won 58.71% and 58.29% against the heuristic on the same
+confirmation fixtures. The paired heuristic change was +0.42 points
+(95% CI −0.27 to +1.11 points).
+
+The candidate is the default actor in `models/best.wah`. Its
+[holdout](benchmarks/five-space-extended/holdout.json) and
+[confirmation](benchmarks/five-space-extended/confirmation.json) record
+the exact actor hashes and parity checks.
+
+
+## League continuation
 
 Two runs resumed the 23,068,672-decision incumbent and added a combined
 12,582,912 decisions. The league sampled 35% incumbent, 23% fixed PPO
@@ -17,7 +39,7 @@ incumbent won 53.26% on identical dice and seats.
 That was a paired gain of 5.35 percentage points
 (95% CI 4.33–6.35 points).
 
-The candidate is the default actor in `models/best.wah`. Python and Java
+This experiment originally promoted the 27,262,976-decision actor. Python and Java
 agreed on all 384 masked decisions checked. See the
 [held-out report](benchmarks/five-space-league/held-out-promotion.json).
 
