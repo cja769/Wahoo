@@ -15,6 +15,27 @@ import torch
 
 from .bridge import SCHEMA, WahooVecEnv
 from .checkpoints import OpponentPool, run_lock, save_checkpoint, write_json
+from .distill import warm_start
+from .shared_policy import SharedMovePolicy
+
+
+class SharedOpponentPool(OpponentPool):
+    def refresh(self):
+        super().refresh()
+        self.frozen = sorted((self.run / "frozen").glob("*.wah"))
+
+    def pick(self, rng):
+        draw = rng.random()
+        if draw < 0.02:
+            return "random"
+        if draw < 0.37:
+            return "heuristic"
+        if draw >= 0.80 and self.history:
+            recent = self.history[-4:]
+            return recent[int(rng.integers(len(recent)))]
+        if draw >= 0.57 and self.frozen:
+            return self.frozen[int(rng.integers(len(self.frozen)))]
+        return self.incumbent if self.incumbent.is_file() else "heuristic"
 
 
 class CheckpointPPO(MaskablePPO):
@@ -72,6 +93,8 @@ def train(args):
         "gae_lambda": args.gae_lambda, "clip_range": args.clip, "ent_coef": args.entropy,
         "width": args.width,
     }
+    if args.shared_moves:
+        settings["actor"] = "shared-move-v1"
     sample_count = args.envs * args.rollout
     if args.batch < 2 or sample_count % args.batch:
         raise ValueError("--batch must be at least 2 and divide --envs times --rollout")
@@ -84,7 +107,7 @@ def train(args):
             raise ValueError("Resume with the same rules schema, rollout, seed and PPO configuration in config.json")
         if not args.resume:
             write_json(config_file, settings)
-        pool = OpponentPool(run)
+        pool = (SharedOpponentPool if args.shared_moves else OpponentPool)(run)
         env = WahooVecEnv(args.envs, args.workers, args.turn_limit, pool.pick)
         try:
             if args.resume:
@@ -95,11 +118,21 @@ def train(args):
                     "n_steps", "batch_size", "n_epochs", "learning_rate", "gamma",
                     "gae_lambda", "clip_range", "ent_coef",
                 )}
+                policy_class = SharedMovePolicy if args.shared_moves else "MlpPolicy"
+                kwargs = {} if args.shared_moves else {
+                    "activation_fn": torch.nn.Tanh,
+                    "net_arch": dict(pi=[args.width, args.width], vf=[args.width, args.width]),
+                }
                 model = CheckpointPPO(
-                    "MlpPolicy", env, **ppo_settings, device=args.device, seed=args.seed,
-                    policy_kwargs={"activation_fn": torch.nn.Tanh,
-                                   "net_arch": dict(pi=[args.width, args.width], vf=[args.width, args.width])},
+                    policy_class, env, **ppo_settings, device=args.device, seed=args.seed,
+                    policy_kwargs=kwargs,
                 )
+                if args.warm_start:
+                    warm_start(model, args.warm_start, pool.pick, args.seed ^ 0x574148,
+                               args.workers, run)
+                if args.shared_moves:
+                    save_checkpoint(model, run)
+                    pool.refresh()
             _learn(args, run, model, env, pool)
         finally:
             env.close()
@@ -159,6 +192,8 @@ def parser():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("--run", required=True, type=Path)
     cli.add_argument("--resume", action="store_true")
+    cli.add_argument("--shared-moves", action="store_true")
+    cli.add_argument("--warm-start", type=Path, help="Compatible dense PPO checkpoint to imitate")
     cli.add_argument("--device", default="cpu")
     for name, default in {
         "seed": 104729, "envs": 16, "workers": 4, "torch-threads": 1, "steps": 500_000,
@@ -180,6 +215,8 @@ def main():
                 args.rollout, args.batch, args.epochs, args.width, args.checkpoint_every)
     if min(positive) < 1 or args.width > 512 or not 0 <= args.seed < 2**32:
         cli.error("Expected positive counts, width at most 512, and an unsigned 32-bit training seed")
+    if args.warm_start and (args.resume or not args.shared_moves or args.device != "cpu"):
+        cli.error("--warm-start initializes a fresh --shared-moves run on CPU")
     train(args)
 
 

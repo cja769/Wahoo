@@ -1,0 +1,38 @@
+{
+  "selected": {
+    "run": "runs/shared-moves-130363",
+    "checkpoint": "runs/shared-moves-130363/step-000004194304.zip",
+    "actor": "runs/shared-moves-130363/step-000004194304.wah",
+    "sha256": "40a5dcd5c3b5133bd726f5611ed1ec14f381d005aa63058482761356e0637c37",
+    "development": [
+      0.07373046875,
+      0.087890625
+    ],
+    "passed": true
+  },
+  "reason": "Led the development comparisons and passed the release benchmark",
+  "runs": [
+    {
+      "run": "runs/shared-moves-104729",
+      "checkpoint": "runs/shared-moves-104729/step-000005242880.zip",
+      "actor": "runs/shared-moves-104729/step-000005242880.wah",
+      "sha256": "0b5b9a407c888906c8aa94d3f101b1fa9a3595eeab24a273e1cbe884cce065e9",
+      "development": [
+        0.0732421875,
+        0.083984375
+      ],
+      "passed": true
+    },
+    {
+      "run": "runs/shared-moves-130363",
+      "checkpoint": "runs/shared-moves-130363/step-000004194304.zip",
+      "actor": "runs/shared-moves-130363/step-000004194304.wah",
+      "sha256": "40a5dcd5c3b5133bd726f5611ed1ec14f381d005aa63058482761356e0637c37",
+      "development": [
+        0.07373046875,
+        0.087890625
+      ],
+      "passed": true
+    }
+  ]
+}

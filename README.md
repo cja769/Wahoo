@@ -111,6 +111,33 @@ the benchmark. A team win pays +1, a loss pays -1, and an unfinished game
 at the configured turn limit pays up to ±0.15 based on board progress
 differential. All intermediate rewards are zero.
 
+### Train the shared move-scoring policy
+
+Pass `--shared-moves` to use one scorer for all four actions. It sees the
+candidate marble, the legal move, and pooled information about each seat.
+Renumbering marbles within a color only renumbers the scores. The learner
+uses the same Java rules, binary observations, and legal-action mask.
+
+To initialize from a trusted schema 3 dense checkpoint and train against
+the incumbent, historical snapshots, and recent policies:
+
+```sh
+run=runs/shared-moves-104729
+mkdir -p "$run/frozen"
+cp models/best.wah "$run/best.wah"
+cp models/preview.wah "$run/frozen/previous.wah"
+python -m training.train --run "$run" --shared-moves --seed 104729 \
+  --warm-start /path/to/teacher-run/dense-checkpoint.zip --epochs 4 --learning-rate 0.0001 \
+  --steps 6291456 --checkpoint-every 1048576
+```
+
+The teacher checkpoint needs the original run's schema 3 `config.json`.
+Use the matching teacher actor as `$run/best.wah` to reproduce the
+experiment. Arbitrary compatible actor files can go in
+`$run/frozen/`. The warm start learns from 524,288 Java positions and saves
+a step-zero checkpoint before PPO starts. Resume with the original
+`--shared-moves` configuration and omit `--warm-start`.
+
 ## Stop and resume
 
 Press Ctrl+C or send SIGTERM. The trainer finishes the current PPO update and
@@ -169,9 +196,10 @@ WAHOO_POLICY_PATH="$(pwd)/runs/five-space-v3/best.wah" \
   java -jar backend/build/libs/wahoo-0.0.1-SNAPSHOT.jar
 ```
 
-The `.wah` binary stores a versioned copy of the PPO actor's two Linear/Tanh
-layers and output layer. Java loads the weights once, applies the shared
-observation schema, and picks the highest-scoring legal action. A configured
+The `.wah` binary stores the actor's weights. Java accepts the dense
+`WAH1` actor and the shared move-scoring `WAH2` actor under rules schema 3.
+Java loads the weights once, uses the same observation encoding as training,
+and picks the highest-scoring legal action. A configured
 file that fails format or schema validation fails startup. Gameplay needs
 only Java and the built frontend assets. Check `/actuator/health` after a
 deploy and compare the actor hashes in `/api/bots` with the benchmark reports.

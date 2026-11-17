@@ -11,6 +11,7 @@ import numpy as np
 from torch import nn
 
 from .bridge import ACTIONS, OBS_SIZE, SCHEMA
+from .shared_policy import SharedMovePolicy
 
 
 @contextmanager
@@ -63,9 +64,15 @@ def actor_layers(policy):
 
 
 def export_actor(model, path):
-    layers = actor_layers(model.policy)
+    if isinstance(model.policy, SharedMovePolicy):
+        actor = model.policy.mlp_extractor
+        layers = [actor.piece, actor.context, actor.move, actor.score]
+        magic = 0x57414832
+    else:
+        layers = actor_layers(model.policy)
+        magic = 0x57414831
     with atomic_write(path) as temporary, temporary.open("wb") as stream:
-        stream.write(struct.pack(">III", 0x57414831, SCHEMA, OBS_SIZE))
+        stream.write(struct.pack(">III", magic, SCHEMA, OBS_SIZE))
         for layer in layers:
             stream.write(struct.pack(">I", layer.out_features))
             for tensor in (layer.weight, layer.bias):

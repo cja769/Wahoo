@@ -12,14 +12,13 @@ from sb3_contrib import MaskablePPO
 import torch
 
 from .bridge import SCHEMA, JavaBridge, WahooVecEnv, UNFINISHED
-from .checkpoints import actor_layers, atomic_write, export_actor, run_lock, write_json
+from .checkpoints import atomic_write, export_actor, run_lock, write_json
 
 MIN_PROMOTION_PAIRS = 256
 
 
 def verify_parity(checkpoint, actor, workers):
     model = MaskablePPO.load(checkpoint, device="cpu")
-    layers = actor_layers(model.policy)
     env = WahooVecEnv(12, workers, 800, lambda _: "heuristic")
     rng = np.random.default_rng(14319)
     max_error = 0.0
@@ -30,10 +29,8 @@ def verify_parity(checkpoint, actor, workers):
             masks = env.action_masks()
             java = env.bridge.probe(actor)
             with torch.no_grad():
-                values = torch.as_tensor(observations)
-                for layer in layers[:-1]:
-                    values = torch.tanh(layer(values))
-                logits = layers[-1](values).numpy()
+                values = model.policy.extract_features(torch.as_tensor(observations))
+                logits = model.policy.action_net(model.policy.mlp_extractor.forward_actor(values)).numpy()
             error = float(np.max(np.abs(logits - java["logits"])))
             max_error = max(max_error, error)
             np.testing.assert_allclose(java["logits"], logits, rtol=1e-5, atol=2e-5)

@@ -1,0 +1,22 @@
+{
+  "candidate": "runs/shared-moves-104729/step-000005242880.wah",
+  "opponent": "runs/shared-moves-130363/step-000004194304.wah",
+  "evaluation_seed": 20271134,
+  "pairs": 4096,
+  "result": {
+    "games": 8192,
+    "wins": 4161,
+    "losses": 4030,
+    "unfinished": 1,
+    "win_rate": 0.5079345703125,
+    "win_rate_ci95": [
+      0.498291015625,
+      0.5177001953125
+    ],
+    "unfinished_rate": 0.0001220703125,
+    "mean_turns": 434.9605712890625,
+    "mean_rolls": 521.7445068359375,
+    "mean_completed": 6.7154541015625,
+    "mean_opponent_completed": 6.5841064453125
+  }
+}

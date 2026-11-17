@@ -1,0 +1,33 @@
+{
+  "positions": 8192,
+  "parity_max_error": 9.5367431640625e-06,
+  "assisting_positions": 78,
+  "same_physical_move": 0.849853515625,
+  "shuffle_trials": 131072,
+  "same_move_under_shuffle": {
+    "incumbent": 107277,
+    "candidate": 131072
+  },
+  "tactics": {
+    "release": {
+      "eligible": 1308,
+      "incumbent": 1186,
+      "candidate": 1194
+    },
+    "capture_opponent": {
+      "eligible": 871,
+      "incumbent": 732,
+      "candidate": 751
+    },
+    "enter_safe_area": {
+      "eligible": 93,
+      "incumbent": 76,
+      "candidate": 77
+    },
+    "zero_destination_danger": {
+      "eligible": 3442,
+      "incumbent": 2609,
+      "candidate": 2786
+    }
+  }
+}
