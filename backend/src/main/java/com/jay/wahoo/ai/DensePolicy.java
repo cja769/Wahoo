@@ -110,6 +110,20 @@ public final class DensePolicy implements Policy {
     }
 
     private float[] evaluateShared(float[] observation, SharedBuffers buffers) {
+        sharedContext(observation, buffers);
+        System.arraycopy(buffers.context, 0, buffers.move, 0, CONTEXT_WIDTH);
+        for (int action = 0; action < 4; action++) {
+            System.arraycopy(buffers.owner[action], 0, buffers.move, CONTEXT_WIDTH, PIECE_WIDTH);
+            System.arraycopy(observation, Decision.ACTION_OFFSET + action * Decision.ACTION_FEATURES,
+                buffers.move, CONTEXT_WIDTH + PIECE_WIDTH, Decision.ACTION_FEATURES);
+            layers[2].forward(buffers.move, buffers.hidden, true);
+            layers[3].forward(buffers.hidden, buffers.score, false);
+            buffers.logits[action] = buffers.score[0];
+        }
+        return buffers.logits;
+    }
+
+    private void sharedContext(float[] observation, SharedBuffers buffers) {
         int owner = observation[2] == 0 ? 0 : 2;
         System.arraycopy(observation, 0, buffers.board, 0, 3);
         for (int seat = 0; seat < 4; seat++) {
@@ -131,16 +145,33 @@ public final class DensePolicy implements Policy {
             }
         }
         layers[1].forward(buffers.board, buffers.context, true);
-        System.arraycopy(buffers.context, 0, buffers.move, 0, CONTEXT_WIDTH);
-        for (int action = 0; action < 4; action++) {
-            System.arraycopy(buffers.owner[action], 0, buffers.move, CONTEXT_WIDTH, PIECE_WIDTH);
-            System.arraycopy(observation, Decision.ACTION_OFFSET + action * Decision.ACTION_FEATURES,
-                buffers.move, CONTEXT_WIDTH + PIECE_WIDTH, Decision.ACTION_FEATURES);
-            layers[2].forward(buffers.move, buffers.hidden, true);
-            layers[3].forward(buffers.hidden, buffers.score, false);
-            buffers.logits[action] = buffers.score[0];
+    }
+
+    /** Loads the value head trained with this exact shared move-scoring actor. */
+    public PositionValue loadValue(Path path) throws IOException {
+        try (var input = new DataInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
+            if (sharedBuffers == null || input.readInt() != 0x57415631
+                || !HexFormat.of().formatHex(input.readNBytes(32)).equals(sha256)) {
+                throw new IOException("Value head does not match the shared actor: " + path);
+            }
+            Layer hidden = readLayer(input, CONTEXT_WIDTH, CONTEXT_WIDTH);
+            Layer output = readLayer(input, CONTEXT_WIDTH, 1);
+            if (input.read() != -1) {
+                throw new IOException("Unexpected trailing data in value head " + path);
+            }
+            return observation -> {
+                SharedBuffers buffers = sharedBuffers.get();
+                sharedContext(observation, buffers);
+                hidden.forward(buffers.context, buffers.hidden, true);
+                output.forward(buffers.hidden, buffers.score, false);
+                return buffers.score[0];
+            };
         }
-        return buffers.logits;
+    }
+
+    @FunctionalInterface
+    public interface PositionValue {
+        float estimate(float[] observation);
     }
 
     private static final class SharedBuffers {
