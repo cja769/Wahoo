@@ -1,8 +1,14 @@
 package com.jay.wahoo.ai;
 
+import com.jay.wahoo.Game;
+
 @FunctionalInterface
 public interface Policy {
     int choose(float[] observation, int mask);
+
+    default int choose(Game game) {
+        return choose(Decision.encode(game), game.actionMask());
+    }
 
     static int bestLegal(float[] scores, int mask) {
         if (mask <= 0 || mask > 15) {

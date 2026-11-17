@@ -35,11 +35,12 @@ before loading the page. Games and seats are in memory and reset on a restart.
 In the lobby, choose an AI model and select **Create Game**. Join that game
 and claim an available seat. Opposite seats are teammates, and bots fill any
 unclaimed seats when the game starts. The Docker image loads the approved
-five-space actor and exposes an earlier actor trained under the same rules
-for comparison. See [the experiment](training/EXPERIMENT.md) for the exact
-checkpoints and their results. When running the jar outside Docker, set
-`WAHOO_POLICY_PATH` to load an approved model and
-`WAHOO_PREVIEW_POLICY_PATH` to expose an optional comparison model. The Java
+five-space PPO actor with bounded lookahead on close moves. Select **Earlier
+PPO checkpoint** to compare the previous direct-scoring policy. For the
+benchmarks and reproduction steps, see [the lookahead experiment](training/LOOKAHEAD.md).
+When running the jar outside Docker, set `WAHOO_POLICY_PATH` to load an
+approved model, `WAHOO_POLICY_VALUE_PATH` for its matching lookahead value head,
+and `WAHOO_PREVIEW_POLICY_PATH` to expose a comparison policy. The Java
 heuristic is the default if no approved model is configured. Training runs
 offline.
 

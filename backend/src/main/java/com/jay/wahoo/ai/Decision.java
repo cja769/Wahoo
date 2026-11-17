@@ -19,6 +19,32 @@ public final class Decision {
         if (game.legalCount() == 0) {
             throw new IllegalStateException("Observation requires a legal decision");
         }
+        float[] observation = encodeBoard(game);
+        Player actor = game.currentPlayer;
+        int index = ACTION_OFFSET;
+        for (int action = 0; action < 4; action++) {
+            LegalMove move = game.legalMove(action);
+            if (move != null) {
+                Player owner = move.marble().player();
+                int position = move.destination();
+                Marble captured = move.captured();
+                boolean opponent = captured != null && captured.player().team() != actor.team();
+                observation[index] = 1;
+                observation[index + 1] = move.marble().position() == GameBoard.HOME ? 1 : 0;
+                observation[index + 2] = trackPosition(actor, owner, position);
+                observation[index + 3] = safeSlot(position);
+                observation[index + 4] = progress(position);
+                observation[index + 5] = opponent ? 1 : 0;
+                observation[index + 6] = opponent ? progress(captured.position()) : 0;
+                observation[index + 7] = captured != null && !opponent ? 1 : 0;
+                observation[index + 8] = destinationDanger(game, actor, move);
+            }
+            index += ACTION_FEATURES;
+        }
+        return observation;
+    }
+
+    static float[] encodeBoard(Game game) {
         Player actor = game.currentPlayer;
         int[] threats = threats(game, actor.seat());
         float[] observation = new float[SIZE];
@@ -37,26 +63,6 @@ public final class Decision {
                 observation[index++] = progress(position);
                 observation[index++] = danger(threats, player, position);
             }
-        }
-        for (int action = 0; action < 4; action++) {
-            LegalMove move = game.legalMove(action);
-            if (move != null) {
-                Player owner = move.marble().player();
-                int position = move.destination();
-                Marble captured = move.captured();
-                boolean opponent = captured != null && captured.player().team() != actor.team();
-                observation[index] = 1;
-                observation[index + 1] = move.marble().position() == GameBoard.HOME ? 1 : 0;
-                observation[index + 2] = trackPosition(actor, owner, position);
-                observation[index + 3] = safeSlot(position);
-                observation[index + 4] = progress(position);
-                observation[index + 5] = opponent ? 1 : 0;
-                observation[index + 6] = opponent ? progress(captured.position()) : 0;
-                observation[index + 7] = captured != null && !opponent ? 1 : 0;
-                // Opposing colors may pass this marble. Their captured marble will be home.
-                observation[index + 8] = destinationDanger(game, actor, move);
-            }
-            index += ACTION_FEATURES;
         }
         return observation;
     }

@@ -5,6 +5,7 @@ import com.jay.wahoo.Game.GameState;
 import com.jay.wahoo.Player;
 import com.jay.wahoo.ai.Decision;
 import com.jay.wahoo.ai.DensePolicy;
+import com.jay.wahoo.ai.LookaheadPolicy;
 import com.jay.wahoo.ai.Policy;
 import com.jay.wahoo.config.PolicyConfig.BotPolicies;
 import com.jay.wahoo.controller.dto.JoinableGameList;
@@ -88,7 +89,10 @@ public class GameService {
         info.put("rulesSchema", Decision.SCHEMA);
         info.put("ppoDefault", computerPolicies.defaultPolicy() != Policy.HEURISTIC);
         info.put("ppoPreview", computerPolicies.preview().isPresent());
-        if (computerPolicies.defaultPolicy() instanceof DensePolicy actor) {
+        info.put("ppoDefaultLookahead", computerPolicies.defaultPolicy() instanceof LookaheadPolicy);
+        if (computerPolicies.defaultPolicy() instanceof LookaheadPolicy search) {
+            info.put("ppoDefaultSha256", search.actorSha256());
+        } else if (computerPolicies.defaultPolicy() instanceof DensePolicy actor) {
             info.put("ppoDefaultSha256", actor.sha256());
         }
         computerPolicies.preview().ifPresent(policy -> {

@@ -98,7 +98,8 @@ const Home = (props) => {
                 <form className="create-game" onSubmit={createGame}>
                     <label htmlFor="ai-model">AI model</label>
                     <select id="ai-model" value={model} onChange={event => setModel(event.target.value)}>
-                        <option value="default">{bots.ppoDefault ? "Strongest approved PPO" : "Heuristic"}</option>
+                        <option value="default">{bots.ppoDefaultLookahead ? "Strongest approved PPO + lookahead"
+                            : bots.ppoDefault ? "Strongest approved PPO" : "Heuristic"}</option>
                         {bots.ppoPreview && <option value="earlier">Earlier PPO checkpoint</option>}
                     </select>
                     <button className="button" disabled={disableCreate}>Create Game</button>

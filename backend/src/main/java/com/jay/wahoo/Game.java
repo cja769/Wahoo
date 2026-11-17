@@ -2,7 +2,6 @@ package com.jay.wahoo;
 
 import com.jay.wahoo.GameBoard.LegalMove;
 import com.jay.wahoo.Player.PlayerState;
-import com.jay.wahoo.ai.Decision;
 import com.jay.wahoo.ai.Policy;
 import com.jay.wahoo.dto.GameSummary;
 
@@ -66,6 +65,50 @@ public class Game {
             player.setPartner(players[(player.seat() + 2) % players.length]);
         }
         board = new GameBoard(players);
+    }
+
+    /** A scratch game for simulations. It has its own board, dice, and no player credentials. */
+    public Game rolloutGame(IntUnaryOperator rolloutDice) {
+        return headless(rolloutDice, playerPos, maxTurns);
+    }
+
+    /** Restore a scratch game to a pending move without transferring the source dice. */
+    public void restoreDecision(Game source) {
+        if (this == source || identifier != null || source.legalCount == 0 || maxTurns != source.maxTurns) {
+            throw new IllegalArgumentException("Expected a scratch game and a compatible pending decision");
+        }
+        for (Player player : players) {
+            for (Marble marble : player.marbles()) {
+                if (marble.position() != GameBoard.HOME) {
+                    board.relocate(marble, GameBoard.HOME);
+                }
+            }
+        }
+        for (Player player : source.players) {
+            for (Marble marble : player.marbles()) {
+                if (marble.position() != GameBoard.HOME) {
+                    board.relocate(players[player.seat()].marbles().get(marble.identifier()), marble.position());
+                }
+            }
+        }
+        playerPos = source.playerPos;
+        currentPlayer = players[source.currentPlayer.seat()];
+        sixCount = source.sixCount;
+        turns = source.turns;
+        rolls = source.rolls;
+        diceRoll = source.diceRoll;
+        diceRollUpdated = source.diceRollUpdated;
+        rolledThreeSixes = source.rolledThreeSixes;
+        penaltyApplied = source.penaltyApplied;
+        gameStarted = true;
+        legalCount = source.legalCount;
+        awaitingHumanMove = false;
+        awaitingComputerMove = true;
+        for (int action = 0; action < legalMoves.length; action++) {
+            LegalMove move = source.legalMoves[action];
+            legalMoves[action] = move == null ? null
+                : board.legalMove(players[move.marble().player().seat()].marbles().get(action), diceRoll);
+        }
     }
 
     public boolean isJoinable() {
@@ -201,7 +244,7 @@ public class Game {
         }
         int mask = actionMask();
         int action = legalCount == 1 ? Integer.numberOfTrailingZeros(mask)
-            : Objects.requireNonNull(policy).choose(Decision.encode(this), mask);
+            : Objects.requireNonNull(policy).choose(this);
         playAction(action);
         lastUpdated = LocalDateTime.now();
         return new GameState(this);
