@@ -41,7 +41,7 @@ Actor SHA-256 `40a5dcd5c3b5133bd726f5611ed1ec14f381d005aa63058482761356e0637c37`
 
 The Java backend ran 19 passing tests and the React frontend ran three. The Python integration suite ran 12 tests. A local packaged game played to completion using HTTP and WebSockets with a human seat and three bots.
 
-The approved shared actor is `models/best.wah`. Choosing **Earlier PPO checkpoint** in the lobby loads the former 30.41M default. See the [benchmark reports](benchmarks/shared-moves/) for actor hashes and reproduction seeds.
+This release used the shared actor as the default and offered the former 30.41M policy for comparison. See the [lookahead study](LOOKAHEAD.md) for tests on top of the shared actor. See the [benchmark reports](benchmarks/shared-moves/) for actor hashes and reproduction seeds.
 
 ## 30.41M checkpoint
 

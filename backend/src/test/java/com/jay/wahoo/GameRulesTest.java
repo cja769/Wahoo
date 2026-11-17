@@ -9,6 +9,41 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GameRulesTest {
     @Test
+    void rolloutCopiesThePendingAssistedMoveAndUsesIndependentDice() {
+        AtomicInteger diceCalls = new AtomicInteger();
+        Game source = Game.headless(seat -> { diceCalls.incrementAndGet(); return 6; }, 0, 800);
+        source.joinGame("Human", "p0");
+        for (int i = 0; i < 4; i++) {
+            place(source, 0, i, GameBoard.SAFE_START + 1 + i);
+        }
+        Marble first = place(source, 2, 0, 5);
+        Marble furthest = place(source, 2, 1, 30);
+        Marble target = place(source, 1, 0, 25);
+        rollAndPlay(source, 0); // The assisted marble captures on the first six.
+        source.advanceRoll();
+        assertEquals(GameBoard.HOME, target.position());
+        assertEquals(1, source.sixCount());
+        assertTrue(source.awaitingHumanMove);
+        Game branch = source.rolloutGame(seat -> 6);
+        branch.restoreDecision(source);
+        assertEquals(2, branch.marbleOwner().seat());
+        assertEquals(source.actionMask(), branch.actionMask());
+        assertArrayEquals(Decision.encode(source), Decision.encode(branch));
+        assertFalse(branch.currentPlayer.isHuman());
+        branch.playAction(0);
+        branch.advanceRoll();
+        assertTrue(branch.rolledThreeSixes);
+        assertEquals(GameBoard.HOME, branch.players[2].marbles().get(1).position());
+        assertEquals(11, first.position());
+        assertEquals(30, furthest.position());
+        assertEquals(2, diceCalls.get());
+        branch.restoreDecision(source);
+        assertArrayEquals(Decision.encode(source), Decision.encode(branch));
+        assertEquals(1, branch.sixCount());
+        assertEquals(2, branch.rollCount());
+    }
+
+    @Test
     void eachThirdSixResetsFurthestMarbleAndKeepsRolling() {
         Game game = game(6, 6, 6, 6, 6, 6, 1, 4);
         Marble first = place(game, 0, 0, 5);

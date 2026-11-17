@@ -1,0 +1,102 @@
+{
+  "selected_mode": "lookahead",
+  "challenger_checkpoint": "runs/search-promotion/live-challenger/step-000007340032.wah",
+  "actor_sha256": "40a5dcd5c3b5133bd726f5611ed1ec14f381d005aa63058482761356e0637c37",
+  "value_sha256": "898a2194ed2491a2cd63524f8d9ba45dd71270f71a4fb4774e400e354b7ab0bc",
+  "challenger_actor_sha256": "c5f0081ef760f530530160e967c316e2c04a5bea2f498cf59282f051251e58df",
+  "confirmation_fixture_seed": 20271160,
+  "continuation_holdout_seed": 20271164,
+  "challenger_lookahead_fixture_seed": 20271165,
+  "challenger_step": 7340032,
+  "decisions_added": 4194304,
+  "minutes": 9.413302451680089,
+  "decisions_per_second": 7426.2,
+  "paired_heuristic": {
+    "search": {
+      "delta": 0.011962890625,
+      "ci95": [
+        0.0008544921875,
+        0.022705078125
+      ]
+    },
+    "challenger": {
+      "delta": -0.0123291015625,
+      "ci95": [
+        -0.0250244140625,
+        0.0006103515625
+      ]
+    }
+  },
+  "initial_holdout": {
+    "games": 16384,
+    "wins": 8436,
+    "losses": 7946,
+    "unfinished": 2,
+    "win_rate": 0.514892578125,
+    "win_rate_ci95": [
+      0.5081787109375,
+      0.521728515625
+    ],
+    "unfinished_rate": 0.0001220703125,
+    "mean_turns": 440.66009521484375,
+    "mean_rolls": 528.6121215820312,
+    "mean_completed": 6.66534423828125,
+    "mean_opponent_completed": 6.5511474609375
+  },
+  "lookahead_confirmation": {
+    "games": 16384,
+    "wins": 8448,
+    "losses": 7936,
+    "unfinished": 0,
+    "win_rate": 0.515625,
+    "win_rate_ci95": [
+      0.50897216796875,
+      0.522216796875
+    ],
+    "unfinished_rate": 0.0,
+    "mean_turns": 439.9500732421875,
+    "mean_rolls": 527.8966674804688,
+    "mean_completed": 6.65972900390625,
+    "mean_opponent_completed": 6.56732177734375
+  },
+  "challenger_vs_lookahead": {
+    "games": 16384,
+    "wins": 7721,
+    "losses": 8661,
+    "unfinished": 2,
+    "win_rate": 0.47125244140625,
+    "win_rate_ci95": [
+      0.4642333984375,
+      0.478271484375
+    ],
+    "unfinished_rate": 0.0001220703125,
+    "mean_turns": 445.705810546875,
+    "mean_rolls": 534.7628173828125,
+    "mean_completed": 6.2945556640625,
+    "mean_opponent_completed": 6.6907958984375
+  },
+  "challenger_vs_live": {
+    "games": 16384,
+    "wins": 8113,
+    "losses": 8269,
+    "unfinished": 2,
+    "win_rate": 0.49517822265625,
+    "win_rate_ci95": [
+      0.4881591796875,
+      0.50213623046875
+    ],
+    "unfinished_rate": 0.0001220703125,
+    "mean_turns": 445.524169921875,
+    "mean_rolls": 534.6437377929688,
+    "mean_completed": 6.372314453125,
+    "mean_opponent_completed": 6.60772705078125
+  },
+  "lookahead_single_worker_latency": {
+    "p50_upper_ms": 0.065536,
+    "p95_upper_ms": 1.048576,
+    "p99_upper_ms": 2.097152
+  },
+  "java_tests": 24,
+  "python_tests": 12,
+  "frontend_tests": 3
+}

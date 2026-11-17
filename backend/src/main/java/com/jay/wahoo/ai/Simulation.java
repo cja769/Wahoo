@@ -52,7 +52,7 @@ final class Simulation {
                 }
                 action = Integer.numberOfTrailingZeros(mask);
             } else {
-                action = policy.choose(Decision.encode(game), mask);
+                action = policy.choose(game);
             }
             game.playAction(action);
         }
