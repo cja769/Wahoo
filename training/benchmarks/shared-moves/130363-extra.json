@@ -1,0 +1,75 @@
+{
+  "model": "step-000004194304.zip",
+  "evaluation_seed": 20271134,
+  "pairs": 4096,
+  "results": {
+    "random": {
+      "games": 8192,
+      "wins": 8159,
+      "losses": 33,
+      "unfinished": 0,
+      "win_rate": 0.9959716796875,
+      "win_rate_ci95": [
+        0.99462890625,
+        0.997314453125
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 352.5572509765625,
+      "mean_rolls": 422.863525390625,
+      "mean_completed": 7.994140625,
+      "mean_opponent_completed": 1.646240234375
+    },
+    "27.26M": {
+      "games": 8192,
+      "wins": 4876,
+      "losses": 3315,
+      "unfinished": 1,
+      "win_rate": 0.59521484375,
+      "win_rate_ci95": [
+        0.5853271484375,
+        0.60498046875
+      ],
+      "unfinished_rate": 0.0001220703125,
+      "mean_turns": 437.2518310546875,
+      "mean_rolls": 524.49267578125,
+      "mean_completed": 6.94677734375,
+      "mean_opponent_completed": 6.2376708984375
+    },
+    "previous_control": {
+      "games": 8192,
+      "wins": 4796,
+      "losses": 3396,
+      "unfinished": 0,
+      "win_rate": 0.58544921875,
+      "win_rate_ci95": [
+        0.575439453125,
+        0.5953369140625
+      ],
+      "unfinished_rate": 0.0,
+      "mean_turns": 432.62060546875,
+      "mean_rolls": 518.9583740234375,
+      "mean_completed": 6.921630859375,
+      "mean_opponent_completed": 6.3154296875
+    },
+    "imitation_only": {
+      "games": 8192,
+      "wins": 4211,
+      "losses": 3979,
+      "unfinished": 2,
+      "win_rate": 0.5140380859375,
+      "win_rate_ci95": [
+        0.50390625,
+        0.52392578125
+      ],
+      "unfinished_rate": 0.000244140625,
+      "mean_turns": 430.6259765625,
+      "mean_rolls": 516.5245361328125,
+      "mean_completed": 6.6512451171875,
+      "mean_opponent_completed": 6.6590576171875
+    }
+  },
+  "opponent_sha256": {
+    "27.26M": "d00d56f66c1d3dfeb85c9557aabb0bcba0ad87713789d504c0a6045b99ab2d4f",
+    "previous_control": "df85f8e735643d1c4a45b918751a758ece1d3ca9a26e103959c59d7c2e555762"
+  }
+}

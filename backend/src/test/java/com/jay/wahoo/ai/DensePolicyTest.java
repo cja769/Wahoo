@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 
@@ -34,6 +35,42 @@ class DensePolicyTest {
         assertThrows(IOException.class, () -> DensePolicy.load(actor));
         Files.write(actor, new byte[0]);
         assertThrows(IOException.class, () -> DensePolicy.load(actor));
+    }
+
+    @Test
+    void sharedActorScoresThePlayingColorAndMasksIllegalActions() throws Exception {
+        Path actor = directory.resolve("shared.wah");
+        try (var out = new DataOutputStream(Files.newOutputStream(actor))) {
+            out.writeInt(0x57414832);
+            out.writeInt(Decision.SCHEMA);
+            out.writeInt(Decision.SIZE);
+            writeLayer(out, 5, 16, 0);   // Encode the first feature of each marble.
+            writeLayer(out, 71, 48, -1);
+            writeLayer(out, 73, 48, 48); // Score the selected marble's first embedding feature.
+            writeLayer(out, 48, 1, 0);
+        }
+        DensePolicy model = DensePolicy.load(actor);
+        float[] board = new float[Decision.SIZE];
+        board[4] = 0.9f;
+        board[9] = 0.5f;
+        board[4 + 2 * 21 + 2 * 5] = 0.8f;
+        assertEquals(0, model.choose(board, 0b1111));
+        assertEquals(1, model.choose(board, 0b1110));
+        board[2] = 1;
+        assertEquals(2, model.choose(board, 0b1111));
+        Files.write(actor, new byte[] {1}, StandardOpenOption.APPEND);
+        assertThrows(IOException.class, () -> DensePolicy.load(actor));
+    }
+
+    private static void writeLayer(DataOutputStream out, int inputs, int outputs, int firstWeight)
+        throws IOException {
+        out.writeInt(outputs);
+        for (int i = 0; i < inputs * outputs; i++) {
+            out.writeFloat(i == firstWeight ? 1 : 0);
+        }
+        for (int i = 0; i < outputs; i++) {
+            out.writeFloat(0);
+        }
     }
 
     private static void writePolicy(Path file, int schema, boolean nonFinite) throws IOException {

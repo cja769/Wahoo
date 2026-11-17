@@ -1,7 +1,49 @@
 # Wahoo PPO training experiments
 
+## Shared move-scoring Wahoo PPO
 
-## 30.41M checkpoint and current actor
+A shared scorer evaluates each legal marble using its starting position, destination, tactical move features, and a pooled view of all four seats. The source color follows the Java rules for teammate assistance. The actor uses the same 123 observation values and four legal-action masks as the dense actor.
+
+Both seeds warm-started on 524,288 positions collected from the schema 3 Java simulator with the 30,408,704-decision actor as teacher. The Maskable PPO phase used 16 environments, four Java workers, four PPO epochs, a 0.0001 learning rate, and the standard terminal reward. Opponents were 35% heuristic, 20% teacher, 23% fixed PPO (4.19M, 23.07M, and the 32.51M dense control), 20% recent snapshots, and 2% random legal play.
+
+The runs each trained for 6,291,456 PPO decisions and completed 12,582,912 decisions in total. The PPO phases ran concurrently for about 15.0 minutes.
+
+| Seed | PPO decisions | PPO duration | Decisions/s | Training games | Warm start | Teacher move agreement |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 104729 | 6,291,456 | 15.0 min | 6,983 | 38,231 | 66.8 s | 86.97% |
+| 130363 | 6,291,456 | 14.8 min | 7,071 | 38,091 | 68.2 s | 87.28% |
+
+Development used 1,024 mirrored pairs per matchup (seed 20271132). Each run selected the checkpoint with the best lower value of its head-to-head gain over 50% and its paired win-rate gain against the heuristic. The selected actors played 8,192 fresh mirrored pairs per matchup (seed 20271133). Additional opponents and the direct cross-seed comparison used 4,096 pairs (seed 20271134). Confidence intervals resample entire mirrored pairs.
+
+| Training seed | Selected PPO decisions | Wins vs 30.41M | Paired 95% CI | Win rate vs heuristic |
+| ---: | ---: | ---: | ---: | ---: |
+| 104729 | 5,242,880 | 9,598/16,384 (58.58%) | 57.88%–59.28% | 67.58% |
+| 130363 | 4,194,304 | 9,685/16,384 (59.11%) | 58.41%–59.81% | 67.10% |
+
+The 104729 seed won 50.79% head to head against the 130363 seed (paired 95% CI 49.83%–51.77%).
+
+Selected `runs/shared-moves-130363/step-000004194304.zip`. Led the development comparisons and passed the release benchmark.
+
+| Opponent | Wins / games | Win rate | Paired 95% CI | Mean turns | Mean completed | Unfinished |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Previous default (30.41M dense PPO) | 9,685/16,384 | 59.11% | 58.41%–59.81% | 436.6 | 6.94 | 2 |
+| Heuristic | 10,994/16,384 | 67.10% | 66.43%–67.77% | 399.5 | 7.21 | 0 |
+| Random legal play | 8,159/8,192 | 99.60% | 99.46%–99.73% | 352.6 | 7.99 | 0 |
+| 27.26M dense PPO | 4,876/8,192 | 59.52% | 58.53%–60.50% | 437.3 | 6.95 | 1 |
+| 32.51M dense control | 4,796/8,192 | 58.54% | 57.54%–59.53% | 432.6 | 6.92 | 0 |
+| Its own imitation-only checkpoint | 4,211/8,192 | 51.40% | 50.39%–52.39% | 430.6 | 6.65 | 2 |
+
+The former default won 58.62% against the heuristic on the same holdout dice. The paired change was +8.48 percentage points (95% CI +7.52 to +9.42).
+
+Python and Java matched on 8,192 additional masked board decisions. Renumbering marbles preserved 131,072 of 131,072 physical moves, compared with 107,277 for the former default. The new actor selected a different physical move in 15.01% of the unshuffled positions.
+
+Actor SHA-256 `40a5dcd5c3b5133bd726f5611ed1ec14f381d005aa63058482761356e0637c37`.
+
+The Java backend ran 19 passing tests and the React frontend ran three. The Python integration suite ran 12 tests. A local packaged game played to completion using HTTP and WebSockets with a human seat and three bots.
+
+The approved shared actor is `models/best.wah`. Choosing **Earlier PPO checkpoint** in the lobby loads the former 30.41M default. See the [benchmark reports](benchmarks/shared-moves/) for actor hashes and reproduction seeds.
+
+## 30.41M checkpoint
 
 Both runs resumed the 27,262,976-decision checkpoint at a learning rate of
 0.0001. The original opponent mix ran for 8,388,608 decisions. A parallel
@@ -17,7 +59,7 @@ and incumbent won 58.71% and 58.29% against the heuristic on the same
 confirmation fixtures. The paired heuristic change was +0.42 points
 (95% CI −0.27 to +1.11 points).
 
-The candidate is the default actor in `models/best.wah`. Its
+The candidate became the default actor at the time. Its
 [holdout](benchmarks/five-space-extended/holdout.json) and
 [confirmation](benchmarks/five-space-extended/confirmation.json) record
 the exact actor hashes and parity checks.
