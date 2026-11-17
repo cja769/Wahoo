@@ -1,7 +1,28 @@
 # Wahoo PPO training experiments
 
 
-## Competitive continuation and current actor
+## League continuation and current actor
+
+Two runs resumed the 23,068,672-decision incumbent and added a combined
+12,582,912 decisions. The league sampled 35% incumbent, 23% fixed PPO
+opponents, 20% recent snapshots, 20% heuristic, and 2% random legal play.
+One run used the original learning rate of 0.0003 and the other used 0.0001.
+
+The 27,262,976-decision actor from the lower-rate
+run qualified on 8,192 fresh mirrored pairs per
+matchup. It won 8,583 of 16,384 games against the incumbent
+(52.39%, paired 95% CI 51.67%–53.10%).
+Against the heuristic, the candidate won 58.61% and the
+incumbent won 53.26% on identical dice and seats.
+That was a paired gain of 5.35 percentage points
+(95% CI 4.33–6.35 points).
+
+The candidate is the default actor in `models/best.wah`. Python and Java
+agreed on all 384 masked decisions checked. See the
+[held-out report](benchmarks/five-space-league/held-out-promotion.json).
+
+
+## Competitive continuation
 
 The original 20,971,520-decision checkpoint was continued for 10,485,760
 decisions with the standard opponent pool. The strongest candidate from that
@@ -20,7 +41,7 @@ run completed 25,165,824 decisions in total. Its selected checkpoint won
 | Corrected heuristic | 8,966/16,384 | 54.72% | 54.02–55.43% |
 | Random legal play | 16,242/16,384 | 99.13% | 98.99–99.27% |
 
-The 23,068,672-decision actor is the promoted `models/best.wah`. Python and
+This experiment originally promoted the 23,068,672-decision actor. Python and
 Java agreed on all 384 parity decisions. See the
 [held-out report](benchmarks/five-space-competitive/held-out-incumbent.json).
 
